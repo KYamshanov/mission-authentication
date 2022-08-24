@@ -1,12 +1,13 @@
 package ru.kyamshanov.mission.authentication.repositories
 
-import org.springframework.data.repository.CrudRepository
+import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import ru.kyamshanov.mission.authentication.entities.UserEntity
-import java.util.UUID
 
 /**
  * CRUD репозиторий для хранения сущнстей пользователя
  */
-internal interface UserEntityCrudRepository : CrudRepository<UserEntity, UUID> {
+internal interface UserEntityCrudRepository : CoroutineCrudRepository<UserEntity, String> {
+    suspend fun existsByLogin(id: String): Boolean
 
+    suspend fun findByLogin(login: String): UserEntity?
 }

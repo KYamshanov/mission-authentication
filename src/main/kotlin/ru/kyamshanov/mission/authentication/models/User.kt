@@ -7,5 +7,6 @@ package ru.kyamshanov.mission.authentication.models
  */
 internal data class User(
     val login: String,
-    val password: String
+    val password: CharSequence,
+    val id: String? = null
 )

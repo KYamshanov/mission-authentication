@@ -23,7 +23,7 @@ class TestController {
      * @return [ResponseEntity] с сгенерированным [UUID]
      */
     @GetMapping("test")
-    fun test(): ResponseEntity<String> =
+    suspend fun test(): ResponseEntity<String> =
         ResponseEntity<String>(
             UUID.randomUUID().toString(),
             HttpStatus.OK
