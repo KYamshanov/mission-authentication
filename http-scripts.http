@@ -1,0 +1,49 @@
+### Регистрация нового юзера
+POST http://localhost:8081/auth/reg
+Content-Type: application/json
+
+{
+  "login": "login18",
+  "password": "password4"
+}
+
+### Аутентификация юзера
+POST http://localhost:8081/auth/login
+Content-Type: application/json
+
+{
+  "login": "login17",
+  "password": "password4",
+  "info": {
+    "fingerprint": "d",
+    "version": "12"
+  }
+}
+
+### Проверка access token
+POST http://localhost:8081/auth/check
+Content-Type: application/json
+
+{
+  "accessToken": "*.*.*"
+}
+
+### Проверка refresh token
+POST http://localhost:8081/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE3IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYxNjc2ODY2LCJqdGkiOiIyODI0M2ZhMzFjNWE0MjljYmYwOTJmNTgzMTQyYWUyNSJ9.rXIo1zI4tH7ZV6xkqdcGdzjRH43QcphAXm4tfLhplSY"
+,  "info": {
+    "fingerprint": "d",
+    "version": "12788"
+  }
+}
+
+### Блокировка сесии по рефреш токену
+POST http://localhost:8081/auth/block
+Content-Type: application/json
+
+{
+  "refreshToken": "*.*.*"
+}
