@@ -7,11 +7,9 @@ import ru.kyamshanov.mission.authentication.components.GenerateJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.components.GetCurrentLocalDateTimeUseCase
 import ru.kyamshanov.mission.authentication.entities.TokenEntity
+import ru.kyamshanov.mission.authentication.entities.TokenStatus
 import ru.kyamshanov.mission.authentication.errors.*
-import ru.kyamshanov.mission.authentication.models.JsonMap
-import ru.kyamshanov.mission.authentication.models.JwtModel
-import ru.kyamshanov.mission.authentication.models.JwtPair
-import ru.kyamshanov.mission.authentication.models.User
+import ru.kyamshanov.mission.authentication.models.*
 import ru.kyamshanov.mission.authentication.repositories.TokenSafeRepository
 import java.time.Instant
 import java.time.LocalDateTime
@@ -52,6 +50,15 @@ internal interface JwtProcessor {
      * @throws TokenExpireException Если время действия токена истекло
      */
     fun verifyAccessToken(accessToken: String): Boolean
+
+    /**
+     * Декодировать и проверить refreshToken
+     * @param refreshToken Рефреш токен
+     * @throws TokenTypeException Если тип токена не REFRESH
+     * @throws TokenExpireException Если время действия токена истекло
+     * @return Конвертированный токен из [String] в [JwtTokenModel]
+     */
+    suspend fun verifyRefreshToken(refreshToken: String): JwtTokenModel
 
     /**
      * Блокировать рефреш токен
@@ -102,21 +109,20 @@ internal class JwtProcessorImpl(
         return true
     }
 
+    override suspend fun verifyRefreshToken(refreshToken: String): JwtTokenModel =
+        refreshToken.parseRefreshToken().second.toModel()
+
     override suspend fun blockRefreshToken(refreshToken: String) {
         val decodedJWT = decodeJwtTokenUseCase.decode(refreshToken)
         if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but was find ${decodedJWT.type}")
         (tokenSafeRepository.findById(decodedJWT.jwtId) ?: throw TokenNotFoundException())
-            .copy(status = TokenEntity.TokenStatus.PAUSED)
+            .copy(status = TokenStatus.PAUSED)
             .also { tokenSafeRepository.save(it) }
     }
 
     override suspend fun refreshSession(refreshToken: String, userInfo: JsonMap): JwtPair {
-        val decodedJWT = decodeJwtTokenUseCase.decode(refreshToken)
-        if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but was find ${decodedJWT.type}")
-        val token = tokenSafeRepository.findById(decodedJWT.jwtId) ?: throw TokenNotFoundException()
-        if (getCurrentLocalDateTimeUseCase() > token.refreshExpiresAt) throw TokenExpireException()
+        val (decodedJWT, token) = refreshToken.parseRefreshToken()
         if (!userVerifyProcessor.verify(requireNotNull(token.sessionInfo), userInfo)) throw UserVerifyException()
-        if (token.status != TokenEntity.TokenStatus.ACTIVE) throw TokenStatusException("current token status ${token.status} but needed ACTIVE")
 
         val userLogin = decodedJWT.subject.orEmpty()
         val accessToken = newAccessToken(userLogin)
@@ -124,10 +130,10 @@ internal class JwtProcessorImpl(
         val refreshedToken = refreshedTokenEntity.toRefreshToken(userLogin)
 
         if (token.sessionInfo != userInfo) {
-            token.copy(status = TokenEntity.TokenStatus.INVALID)
+            token.copy(status = TokenStatus.INVALID, updatedAt = getCurrentLocalDateTimeUseCase())
                 .also { tokenSafeRepository.saveTokens(it, refreshedTokenEntity) }
         } else {
-            refreshedTokenEntity.copy(givenId = token.id)
+            refreshedTokenEntity.copy(givenId = token.id, createdAt = token.createdAt)
                 .also { tokenSafeRepository.save(it) }
         }
         return JwtPair(accessToken, refreshedToken)
@@ -140,8 +146,9 @@ internal class JwtProcessorImpl(
         return TokenEntity(
             userId = userId,
             createdAt = createdAt,
+            updatedAt = createdAt,
             refreshExpiresAt = expiresAt,
-            status = TokenEntity.TokenStatus.ACTIVE,
+            status = TokenStatus.ACTIVE,
             sessionInfo = userInfo
         )
     }
@@ -159,4 +166,13 @@ internal class JwtProcessorImpl(
         expiresAt = refreshExpiresAt.atZone(ZoneId.systemDefault()).toInstant(),
         subject = userLogin
     ).let { generateJwtTokenUseCase(it) }
+
+    private suspend fun String.parseRefreshToken(): Pair<JwtModel, TokenEntity> {
+        val decodedJWT = decodeJwtTokenUseCase.decode(this)
+        if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but was find ${decodedJWT.type}")
+        val token = tokenSafeRepository.findById(decodedJWT.jwtId) ?: throw TokenNotFoundException()
+        if (getCurrentLocalDateTimeUseCase() > token.refreshExpiresAt) throw TokenExpireException()
+        if (token.status != TokenStatus.ACTIVE) throw TokenStatusException("current token status ${token.status} but needed ACTIVE")
+        return decodedJWT to token
+    }
 }

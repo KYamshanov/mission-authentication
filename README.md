@@ -32,3 +32,7 @@ refresh токены
 статья https://medium.com/analytics-vidhya/password-hashing-pbkdf2-scrypt-bcrypt-and-argon2-e25aaf41598e
 А также информация из
 документации https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html#authentication-password-storage-argon2
+
+QR авторизация.
+Система должна поддерживать авторизацию через куар код. Для этого создан отдельный End-point (POST) : /share, который
+принимает refresh-token. 

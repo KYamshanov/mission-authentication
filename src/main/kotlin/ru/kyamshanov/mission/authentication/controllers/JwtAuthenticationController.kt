@@ -126,4 +126,22 @@ internal class JwtAuthenticationController @Autowired constructor(
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
+
+    /**
+     * End-point (POST) : /share
+     * Создание токена для авторизации
+     * @param body Тело запроса
+     * @return [ResponseEntity] Статус обработки
+     */
+    @PostMapping("share")
+    suspend fun shareAuthentication(
+        @RequestBody(required = true) body: BlockRqDto
+    ): ResponseEntity<Unit> =
+        try {
+            blockingService.blockSession(body.refreshToken)
+            ResponseEntity(HttpStatus.OK)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
 }

@@ -69,4 +69,9 @@ object GlobalConstants {
      * Ключ для параметра - время жизни токена доступности
      */
     const val KEY_PASSWORD = "certificate.database.password"
+
+    /**
+     * Ключ для параметра - время жизни auth-share токена
+     */
+    const val KEY_SHARE_TOKEN_LIFE_TIME = "auth.share-life-time"
 }
