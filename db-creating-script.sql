@@ -17,11 +17,25 @@ CREATE TABLE auth_users
 CREATE TABLE auth_tokens
 (
     id                 VARCHAR(50) PRIMARY KEY,
-    user_id            VARCHAR(50)        NOT NULL,
-    created_at         TIMESTAMP          NOT NULL,
-    refresh_expires_at TIMESTAMP          NOT NULL,
-    status             token_status       NOT NULL,
-    info               JSON               NOT NULL,
+    user_id            VARCHAR(50)  NOT NULL,
+    created_at         TIMESTAMP    NOT NULL,
+    updated_at         TIMESTAMP    NOT NULL,
+    refresh_expires_at TIMESTAMP    NOT NULL,
+    status             token_status NOT NULL,
+    info               JSON         NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES auth_users (id)
 );
+
+CREATE TABLE auth_share
+(
+    id         VARCHAR(50) PRIMARY KEY,
+    user_id    VARCHAR(50)  NOT NULL,
+    session_id VARCHAR(50)  NOT NULL,
+    created_at TIMESTAMP    NOT NULL,
+    expires_at TIMESTAMP    NOT NULL,
+    status     token_status NOT NULL,
+
+    FOREIGN KEY (user_id) REFERENCES auth_users (id),
+    FOREIGN KEY (session_id) REFERENCES auth_tokens (id)
+)

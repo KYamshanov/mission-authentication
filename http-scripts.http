@@ -33,10 +33,10 @@ POST http://localhost:8081/auth/refresh
 Content-Type: application/json
 
 {
-  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE3IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYxNjc2ODY2LCJqdGkiOiIyODI0M2ZhMzFjNWE0MjljYmYwOTJmNTgzMTQyYWUyNSJ9.rXIo1zI4tH7ZV6xkqdcGdzjRH43QcphAXm4tfLhplSY"
-,  "info": {
-    "fingerprint": "d",
-    "version": "12788"
+  "refreshToken": "*.*.*",
+  "info": {
+    "fingerprint": "*",
+    "version": "_"
   }
 }
 
@@ -47,3 +47,24 @@ Content-Type: application/json
 {
   "refreshToken": "*.*.*"
 }
+
+### Создание share_auth токена для внешней аутентификации
+POST http://localhost:8081/auth/share
+Content-Type: application/json
+
+{
+  "refreshToken": "*.*.*"
+}
+
+### Блокировка сесии по рефреш токену
+POST http://localhost:8081/auth/share_login
+Content-Type: application/json
+
+{
+  "authShareToken": "*",
+  "info": {
+    "fingerprint": "*"
+  }
+}
+
+

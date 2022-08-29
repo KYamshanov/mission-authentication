@@ -10,5 +10,5 @@ package ru.kyamshanov.mission.authentication.dto
 data class UserDto(
     val login: String,
     val password: CharSequence,
-    val info: Map<String, Any>? = null,
+    val info: Map<String, Any>? = null
 )

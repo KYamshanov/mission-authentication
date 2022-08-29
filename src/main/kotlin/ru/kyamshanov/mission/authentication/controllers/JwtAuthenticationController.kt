@@ -14,12 +14,14 @@ import ru.kyamshanov.mission.authentication.models.JsonMap
 import ru.kyamshanov.mission.authentication.services.AuthenticationService
 import ru.kyamshanov.mission.authentication.services.BlockingService
 import ru.kyamshanov.mission.authentication.services.RegistrationService
+import ru.kyamshanov.mission.authentication.services.ShareAuthenticationService
 
 /**
  * Контроллер для JWT авторизации
  * @property authenticationService Сервис аутентификации
  * @property registrationService Сервис регистрации
  * @property blockingService Сервис блокировки
+ * @property shareAuthenticationService Сервис для внешней аутентификации по токену
  * @property userFactory Фабрика пользователя
  */
 @RestController
@@ -28,6 +30,7 @@ internal class JwtAuthenticationController @Autowired constructor(
     private val authenticationService: AuthenticationService,
     private val registrationService: RegistrationService,
     private val blockingService: BlockingService,
+    private val shareAuthenticationService: ShareAuthenticationService,
     private val userFactory: UserFactory
 ) {
 
@@ -101,9 +104,9 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: RefreshRqDto
     ): ResponseEntity<TokensRsDto> =
         try {
-            authenticationService.verifyAndUpdateRefreshToken(body.refreshToken, JsonMap(body.info)).let {
-                TokensRsDto(it.accessToken, it.refreshToken)
-            }.let { ResponseEntity(it, HttpStatus.OK) }
+            authenticationService.verifyAndUpdateRefreshToken(body.refreshToken, JsonMap(body.info))
+                .let { TokensRsDto(it.accessToken, it.refreshToken) }
+                .let { ResponseEntity(it, HttpStatus.OK) }
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -122,6 +125,42 @@ internal class JwtAuthenticationController @Autowired constructor(
         try {
             blockingService.blockSession(body.refreshToken)
             ResponseEntity(HttpStatus.OK)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+
+    /**
+     * End-point (POST) : /share
+     * Создание токена для авторизации
+     * @param body Тело запроса
+     * @return [ResponseEntity] Статус обработки
+     */
+    @PostMapping("share")
+    suspend fun createShareAuthenticationToken(
+        @RequestBody(required = true) body: ShareRqDto
+    ): ResponseEntity<ShareRsDto> =
+        try {
+            val shareAuthToken = shareAuthenticationService.createShareAuthToken(body.refreshToken)
+            ResponseEntity(ShareRsDto(shareAuthToken), HttpStatus.OK)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+
+    /**
+     * End-point (POST) : /share_login
+     * Создание токена для авторизации
+     * @param body Тело запроса
+     * @return [ResponseEntity] Статус обработки
+     */
+    @PostMapping("share_login")
+    suspend fun shareAuthentication(
+        @RequestBody(required = true) body: LoginShareRqDto
+    ): ResponseEntity<TokensRsDto> =
+        try {
+            val jwtPair = shareAuthenticationService.login(body.authShareToken, JsonMap(body.info))
+            ResponseEntity(TokensRsDto(jwtPair.accessToken, jwtPair.refreshToken), HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
