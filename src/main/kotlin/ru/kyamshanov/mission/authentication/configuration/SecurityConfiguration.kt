@@ -7,7 +7,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 
 /**
@@ -19,7 +19,7 @@ internal class SecurityConfiguration {
     @Bean
     @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
     fun providePasswordEncoder(): PasswordEncoder =
-        BCryptPasswordEncoder()
+        Argon2PasswordEncoder()
 
     @Bean
     @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
