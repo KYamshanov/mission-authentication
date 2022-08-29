@@ -34,6 +34,7 @@ dependencies {
 
     //crypto
     implementation("org.springframework.security:spring-security-crypto")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
 
     //JWT
     implementation("com.auth0:java-jwt:4.0.0")

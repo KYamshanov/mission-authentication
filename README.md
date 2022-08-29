@@ -25,3 +25,10 @@ refresh токены
 Для блокировки сессии т.е. refresh токена используем End-point (POST) : /block который принимает refresh jwt токен.
 Полученный токен дешифрируется с проверкой сигнатуры, в БД 'auth_tokens' находим соответствующую запись сессии и
 изменяет статус на PAUSED
+
+Хеширование пароля:
+Для хеширования пароля используем алгоритм Argon2 как наиболее современный и безопасный.
+Основанием использования этого алгоритма является
+статья https://medium.com/analytics-vidhya/password-hashing-pbkdf2-scrypt-bcrypt-and-argon2-e25aaf41598e
+А также информация из
+документации https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html#authentication-password-storage-argon2
