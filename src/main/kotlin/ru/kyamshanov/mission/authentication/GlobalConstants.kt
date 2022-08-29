@@ -69,4 +69,9 @@ object GlobalConstants {
      * Ключ для параметра - время жизни токена доступности
      */
     const val KEY_PASSWORD = "certificate.database.password"
+
+    /**
+     * Ключ для параметра - приватный ключ для алгоритма HMAC256
+     */
+    const val KEY_ALGORITHM_SECRET = "algorithm.secret"
 }

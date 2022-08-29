@@ -32,3 +32,11 @@ refresh токены
 статья https://medium.com/analytics-vidhya/password-hashing-pbkdf2-scrypt-bcrypt-and-argon2-e25aaf41598e
 А также информация из
 документации https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html#authentication-password-storage-argon2
+
+Алгоритм шифрования для JWT
+Шифрование и дешифрование JWT токена должно происходить в нашей системе только на данном МС(mission-authentication),
+поэтому будем использовать алгоритм HMAC, который принимает только приватный ключ(secret), а использование именно
+HMAC256
+обусловлено ограниченными вычислительными мощностями.
+!при использовании HMAC256 длина секретного ключа должна быть не менее 256 бит.
+см.: https://github.com/auth0/java-jwt#hmac-key-length-and-security !
