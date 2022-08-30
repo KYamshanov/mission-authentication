@@ -58,7 +58,14 @@ internal class AuthenticationServiceImpl @Autowired constructor(
 ) : AuthenticationService {
 
     override suspend fun login(user: User, userInfo: JsonMap): JwtPair =
-        userProcessor.verify(user).let { jwtProcessor.createSession(it, userInfo) }
+        userProcessor.verify(user)
+            .let {
+                jwtProcessor.createSession(
+                    userId = requireNotNull(it.id),
+                    userLogin = it.login,
+                    userInfo = userInfo
+                )
+            }
 
     override fun verifyAccess(accessToken: String) {
         jwtProcessor.verifyAccessToken(accessToken)

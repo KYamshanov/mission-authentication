@@ -74,4 +74,9 @@ object GlobalConstants {
      * Ключ для параметра - приватный ключ для алгоритма HMAC256
      */
     const val KEY_ALGORITHM_SECRET = "algorithm.secret"
+
+    /**
+     * Ключ для параметра - время жизни auth-share токена
+     */
+    const val KEY_SHARE_TOKEN_LIFE_TIME = "auth.share-life-time"
 }
