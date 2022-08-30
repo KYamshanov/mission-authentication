@@ -39,6 +39,9 @@ dependencies {
     //JWT
     implementation("com.auth0:java-jwt:4.0.0")
 
+    //Redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
     //for test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")

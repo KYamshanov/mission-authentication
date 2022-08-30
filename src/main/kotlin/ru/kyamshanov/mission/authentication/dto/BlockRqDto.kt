@@ -1,9 +1,9 @@
 package ru.kyamshanov.mission.authentication.dto
 
 /**
- * Dto-model Тело запроса на блокировку сессии
- * @property refreshToken Рефреш токен
+ * Dto-model Тело запроса на блокировку токена
+ * @property token Токен
  */
 data class BlockRqDto(
-    val refreshToken: String
+    val token: String
 )

@@ -87,6 +87,7 @@ internal class JwtAuthenticationController @Autowired constructor(
     ): ResponseEntity<Unit> =
         try {
             authenticationService.verifyAccess(body.accessToken)
+            if (body.checkBlock) blockingService.verifyAccess(body.accessToken)
             ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -123,7 +124,7 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: BlockRqDto
     ): ResponseEntity<Unit> =
         try {
-            blockingService.blockSession(body.refreshToken)
+            blockingService.blockSession(body.token)
             ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -161,6 +162,24 @@ internal class JwtAuthenticationController @Autowired constructor(
         try {
             val jwtPair = shareAuthenticationService.login(body.authShareToken, JsonMap(body.info))
             ResponseEntity(TokensRsDto(jwtPair.accessToken, jwtPair.refreshToken), HttpStatus.OK)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+
+    /**
+     * End-point (POST) : /block_access
+     * Блокировка access токена
+     * @param body Тело запроса
+     * @return [ResponseEntity] Статус обработки
+     */
+    @PostMapping("block_access")
+    suspend fun blockAccessToken(
+        @RequestBody(required = true) body: BlockRqDto
+    ): ResponseEntity<TokensRsDto> =
+        try {
+            blockingService.blockAccess(body.token)
+            ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
