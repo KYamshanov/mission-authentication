@@ -1,0 +1,6 @@
+package ru.kyamshanov.mission.authentication.repositories
+
+import org.springframework.data.repository.kotlin.CoroutineCrudRepository
+import ru.kyamshanov.mission.authentication.entities.BlockAccessTokenEntity
+
+internal interface BlockedAccessTokenRepository : CoroutineCrudRepository<BlockAccessTokenEntity, String>
