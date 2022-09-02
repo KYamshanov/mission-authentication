@@ -54,7 +54,7 @@ POST http://localhost:8081/auth/share
 Content-Type: application/json
 
 {
-  "refreshToken": "*.*.*"
+  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE4IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYyMTAzNzY5LCJqdGkiOiIyOTEyZjU4YzgyZDI0NWU4YjMyOTQ1ZTg0OWMyMzA2ZSJ9.6AbCc3u1XfvSiKPQGGrFzOXY7HDqL9P-H0jje4CPbsA"
 }
 
 ### Блокировка сесии по рефреш токену
