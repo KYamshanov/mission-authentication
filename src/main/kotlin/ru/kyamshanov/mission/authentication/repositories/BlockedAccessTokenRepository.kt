@@ -14,7 +14,7 @@ import ru.kyamshanov.mission.authentication.entities.BlockAccessTokenEntity
  */
 @Repository
 internal class BlockedAccessTokenRepository @Autowired constructor(
-    private val reactiveRedisTemplate: ReactiveRedisTemplate<String, String>
+    private val reactiveRedisTemplate: ReactiveRedisTemplate<String, Long>
 ) {
 
     /**
@@ -22,11 +22,8 @@ internal class BlockedAccessTokenRepository @Autowired constructor(
      * @param entity Сущность блокировки
      */
     suspend fun save(entity: BlockAccessTokenEntity) = withContext(Dispatchers.IO) {
-        reactiveRedisTemplate.opsForHash<String, String>().putAll(
-            entity.id, mapOf(
-                KEY_JWT_ID to entity.id,
-                KEY_EXPIRES_AT to entity.expiresAt.toString()
-            )
+        reactiveRedisTemplate.opsForList().leftPush(
+            entity.id, entity.expiresAt.toEpochMilli()
         ).awaitSingleOrNull()
     }
 
@@ -35,7 +32,14 @@ internal class BlockedAccessTokenRepository @Autowired constructor(
      * @param id Идентификатор access токена
      */
     suspend fun existsById(id: String): Boolean = withContext(Dispatchers.IO) {
-        reactiveRedisTemplate.opsForHash<String, String>().hasKey(id, KEY_JWT_ID).awaitSingleOrNull() ?: false
+        reactiveRedisTemplate.opsForList().leftPop(id).awaitSingleOrNull() != null
+    }
+
+    suspend fun clearExpiredTokens() {
+        reactiveRedisTemplate.opsForValue().("blocked_access:38ecead5-f994-45aa-a19d-56ff71c039ae/id")
+            .awaitSingleOrNull().let {
+                println("FINDER VALUE : ${it ?: "null("}")
+            }
     }
 
     private companion object {

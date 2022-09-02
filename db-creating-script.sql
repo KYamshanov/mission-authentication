@@ -1,6 +1,8 @@
 /**
   Скрипт для создания/пересоздания новых таблиц
  */
+
+DROP TABLE IF EXISTS auth_share;
 DROP TABLE IF EXISTS auth_tokens;
 DROP TABLE IF EXISTS auth_users;
 DROP TYPE token_status;
@@ -24,7 +26,7 @@ CREATE TABLE auth_tokens
     status             token_status NOT NULL,
     info               JSON         NOT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES auth_users (id)
+    FOREIGN KEY (user_id) REFERENCES auth_users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE auth_share
@@ -36,6 +38,8 @@ CREATE TABLE auth_share
     expires_at TIMESTAMP    NOT NULL,
     status     token_status NOT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES auth_users (id),
-    FOREIGN KEY (session_id) REFERENCES auth_tokens (id)
+    FOREIGN KEY (user_id) REFERENCES auth_users (id) ON DELETE CASCADE,
+    FOREIGN KEY (session_id) REFERENCES auth_tokens (id) ON DELETE CASCADE
 )
+
+
