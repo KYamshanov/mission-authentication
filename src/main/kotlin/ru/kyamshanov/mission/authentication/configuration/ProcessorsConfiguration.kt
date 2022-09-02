@@ -12,7 +12,6 @@ import ru.kyamshanov.mission.authentication.components.*
 import ru.kyamshanov.mission.authentication.propcessors.*
 import ru.kyamshanov.mission.authentication.repositories.TokenSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
-import ru.kyamshanov.mission.authentication.propcessors.UserVerifyProcessor
 
 /**
  * Конфигурация обработчиков
@@ -44,7 +43,8 @@ internal class ProcessorsConfiguration(
         generateJwtTokenUseCase: GenerateJwtTokenUseCase,
         decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
         @UserVerifyNormal
-        userVerifyProcessor: UserVerifyProcessor
+        userVerifyProcessor: UserVerifyProcessor,
+        expireVerificationValidator: ExpireVerificationValidator
     ): JwtProcessor =
         JwtProcessorImpl(
             refreshTokenTimeLife = refreshTokenTimeLife,
@@ -54,7 +54,8 @@ internal class ProcessorsConfiguration(
             getCurrentInstantUseCase = getCurrentInstantUseCase,
             generateJwtTokenUseCase = generateJwtTokenUseCase,
             decodeJwtTokenUseCase = decodeJwtTokenUseCase,
-            userVerifyProcessor = userVerifyProcessor
+            userVerifyProcessor = userVerifyProcessor,
+            expireVerificationValidator = expireVerificationValidator
         )
 
     @Bean
