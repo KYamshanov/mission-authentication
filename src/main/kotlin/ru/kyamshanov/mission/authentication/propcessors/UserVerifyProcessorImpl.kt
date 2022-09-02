@@ -1,6 +1,7 @@
 package ru.kyamshanov.mission.authentication.propcessors
 
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.stereotype.Component
 import ru.kyamshanov.mission.authentication.UserInfoConstants.FINGERPRINT_KEY
 import ru.kyamshanov.mission.authentication.models.JsonMap
 
@@ -15,7 +16,9 @@ internal annotation class UserVerifyNormal
  * Для валидности информации необходимо поле `fingerprint`
  * Для соответствия данных пользователей используется отпечаток устройства (`fingerprint`)
  */
-internal class UserVerifyProcessorNormal : UserVerifyProcessor {
+@Component
+@UserVerifyNormal
+private class UserVerifyProcessorNormal : UserVerifyProcessor {
 
     override fun checkInfo(info: JsonMap): Boolean =
         info.map[FINGERPRINT_KEY] != null

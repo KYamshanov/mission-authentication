@@ -20,7 +20,7 @@ internal interface UserFactory {
  * Реализация [UserFactory]
  */
 @Component
-internal class UserFactoryImpl : UserFactory {
+private class UserFactoryImpl : UserFactory {
 
     /**
      * @see [UserFactory.createUser]

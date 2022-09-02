@@ -15,7 +15,7 @@ internal interface UserVerifyProcessor {
     fun checkInfo(info: JsonMap): Boolean
 
     /**
-     * Проверить сохраненные и полученные данные пользователя
+     * Сверить сохраненные и полученные данные пользователя
      * @param savedInfo Сохраненные данные
      * @param currentInfo Текущие данные
      * @return true - если данные соответствующие (не обязательно равные)

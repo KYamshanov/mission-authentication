@@ -1,5 +1,6 @@
 package ru.kyamshanov.mission.authentication.controllers
 
+import com.auth0.jwt.exceptions.TokenExpiredException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -9,12 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import ru.kyamshanov.mission.authentication.components.UserFactory
 import ru.kyamshanov.mission.authentication.dto.*
+import ru.kyamshanov.mission.authentication.errors.SessionBlockedException
+import ru.kyamshanov.mission.authentication.errors.TokenExpireException
 import ru.kyamshanov.mission.authentication.errors.UserInfoRequiredException
 import ru.kyamshanov.mission.authentication.models.JsonMap
-import ru.kyamshanov.mission.authentication.services.AuthenticationService
-import ru.kyamshanov.mission.authentication.services.BlockingService
-import ru.kyamshanov.mission.authentication.services.RegistrationService
-import ru.kyamshanov.mission.authentication.services.ShareAuthenticationService
+import ru.kyamshanov.mission.authentication.services.*
 
 /**
  * Контроллер для JWT авторизации
@@ -22,6 +22,8 @@ import ru.kyamshanov.mission.authentication.services.ShareAuthenticationService
  * @property registrationService Сервис регистрации
  * @property blockingService Сервис блокировки
  * @property shareAuthenticationService Сервис для внешней аутентификации по токену
+ * @property verifyService Сервис проверки
+ * @property sessionService Сессионный сервис
  * @property userFactory Фабрика пользователя
  */
 @RestController
@@ -31,6 +33,8 @@ internal class JwtAuthenticationController @Autowired constructor(
     private val registrationService: RegistrationService,
     private val blockingService: BlockingService,
     private val shareAuthenticationService: ShareAuthenticationService,
+    private val verifyService: VerifyService,
+    private val sessionService: SessionService,
     private val userFactory: UserFactory
 ) {
 
@@ -84,11 +88,16 @@ internal class JwtAuthenticationController @Autowired constructor(
     @PostMapping("check")
     suspend fun checkAccessToken(
         @RequestBody(required = true) body: CheckAccessRqDto
-    ): ResponseEntity<Unit> =
+    ): ResponseEntity<CheckAccessRsDto> =
         try {
-            authenticationService.verifyAccess(body.accessToken)
-            if (body.checkBlock) blockingService.verifyAccess(body.accessToken)
-            ResponseEntity(HttpStatus.OK)
+            verifyService.verifyAccessToken(body.accessToken, body.checkBlock)
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.ACTIVE), HttpStatus.OK)
+        } catch (e: TokenExpiredException) {
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.EXPIRED), HttpStatus.OK)
+        } catch (e: TokenExpireException) {
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.EXPIRED), HttpStatus.OK)
+        } catch (e: SessionBlockedException) {
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.BLOCKED), HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -101,11 +110,11 @@ internal class JwtAuthenticationController @Autowired constructor(
      * @return [ResponseEntity] С парой новых токенов
      */
     @PostMapping("refresh")
-    suspend fun validateTokens(
+    suspend fun refresh(
         @RequestBody(required = true) body: RefreshRqDto
     ): ResponseEntity<TokensRsDto> =
         try {
-            authenticationService.verifyAndUpdateRefreshToken(body.refreshToken, JsonMap(body.info))
+            authenticationService.refreshSession(body.refreshToken, JsonMap(body.info))
                 .let { TokensRsDto(it.accessToken, it.refreshToken) }
                 .let { ResponseEntity(it, HttpStatus.OK) }
         } catch (e: Throwable) {
@@ -115,16 +124,16 @@ internal class JwtAuthenticationController @Autowired constructor(
 
     /**
      * End-point (POST) : /block
-     * Блокировка рефреш токена
+     * Блокировка сессии
      * @param body Тело запроса
      * @return [ResponseEntity] Статус обработки
      */
     @PostMapping("block")
-    suspend fun blockToken(
+    suspend fun blockSession(
         @RequestBody(required = true) body: BlockRqDto
     ): ResponseEntity<Unit> =
         try {
-            blockingService.blockSession(body.token)
+            blockingService.blockSession(body.sessionId)
             ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -133,7 +142,7 @@ internal class JwtAuthenticationController @Autowired constructor(
 
     /**
      * End-point (POST) : /share
-     * Создание токена для авторизации
+     * Создание токена для внешней авторизации
      * @param body Тело запроса
      * @return [ResponseEntity] Статус обработки
      */
@@ -142,7 +151,8 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: ShareRqDto
     ): ResponseEntity<ShareRsDto> =
         try {
-            val shareAuthToken = shareAuthenticationService.createShareAuthToken(body.refreshToken)
+            val shareAuthToken = verifyService.verifyAccessToken(body.accessToken, true)
+                .let { shareAuthenticationService.createShareAuthToken(it.jwtId) }
             ResponseEntity(ShareRsDto(shareAuthToken), HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -151,7 +161,7 @@ internal class JwtAuthenticationController @Autowired constructor(
 
     /**
      * End-point (POST) : /share_login
-     * Создание токена для авторизации
+     * Внешняя авторизация по токену
      * @param body Тело запроса
      * @return [ResponseEntity] Статус обработки
      */
@@ -168,18 +178,18 @@ internal class JwtAuthenticationController @Autowired constructor(
         }
 
     /**
-     * End-point (POST) : /block_access
-     * Блокировка access токена
+     * End-point (POST) : /sessions
+     * Получение всех сессий пользователя
      * @param body Тело запроса
      * @return [ResponseEntity] Статус обработки
      */
-    @PostMapping("block_access")
-    suspend fun blockAccessToken(
-        @RequestBody(required = true) body: BlockRqDto
-    ): ResponseEntity<TokensRsDto> =
+    @PostMapping("sessions")
+    suspend fun shareAuthentication(
+        @RequestBody(required = true) body: GetAllSessionsRqDto
+    ): ResponseEntity<GetAllSessionsRsDto> =
         try {
-            blockingService.blockAccess(body.token)
-            ResponseEntity(HttpStatus.OK)
+            val sessions = sessionService.getAllSessionsByAccessToken(body.accessToken)
+            ResponseEntity(GetAllSessionsRsDto(sessions), HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)

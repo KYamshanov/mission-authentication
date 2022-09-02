@@ -6,24 +6,21 @@ import org.springframework.data.relational.core.mapping.Table
 import java.time.Instant
 
 /**
- * Сущность таблицы - auth share
+ * Сущность таблицы - сессия пользователя
  * @property userId Id юзера
- * @property sessionId Сессия из которой происходит внешняя аутентификация
  * @property createdAt Дата создания сущности
- * @property expiresAt Дата истечения срока действия токена
- * @property status Статус share-auth токена
- * @property givenId Id сущности
+ * @property updatedAt Дата изменения записи
+ * @property status Статус сессии
+ * @property givenId Id сущности / Идентификатор сессии
  */
-@Table("auth_share")
-internal data class ShareEntity(
+@Table("auth_sessions")
+internal data class SessionEntity(
     @Column("user_id")
     val userId: String,
-    @Column("session_id")
-    val sessionId: String,
     @Column("created_at")
     val createdAt: Instant,
-    @Column("expires_at")
-    val expiresAt: Instant,
+    @Column("updated_at")
+    val updatedAt: Instant,
     @Column("status")
     val status: EntityStatus,
     @Id

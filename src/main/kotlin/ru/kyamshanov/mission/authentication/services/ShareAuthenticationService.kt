@@ -4,19 +4,21 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import ru.kyamshanov.mission.authentication.GlobalConstants.KEY_SHARE_TOKEN_LIFE_TIME
+import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
-import ru.kyamshanov.mission.authentication.components.GetCurrentLocalDateTimeUseCase
+import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
+import ru.kyamshanov.mission.authentication.entities.EntityStatus
 import ru.kyamshanov.mission.authentication.entities.ShareEntity
-import ru.kyamshanov.mission.authentication.entities.TokenStatus
+import ru.kyamshanov.mission.authentication.errors.StatusException
 import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
-import ru.kyamshanov.mission.authentication.errors.TokenStatusException
 import ru.kyamshanov.mission.authentication.errors.UserNotFoundException
 import ru.kyamshanov.mission.authentication.models.JsonMap
 import ru.kyamshanov.mission.authentication.models.JwtPair
-import ru.kyamshanov.mission.authentication.propcessors.JwtProcessor
+import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
+import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.ShareEntityCrudRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * Сервис для внешней аутентификации по токену
@@ -25,9 +27,10 @@ internal interface ShareAuthenticationService {
 
     /**
      * Создать share-auth токен для внешней аутентификации по токену
+     * @param sessionId Идентфикатор исходной сессии
      * @return Токен
      */
-    suspend fun createShareAuthToken(refreshToken: String): String
+    suspend fun createShareAuthToken(sessionId: String): String
 
     /**
      * Аутентифицировать пользователя через share_auth токен
@@ -40,42 +43,48 @@ internal interface ShareAuthenticationService {
 
 /**
  * Реализация [RegistrationService]
- * @property jwtProcessor Обработчик JWT
+ * @property decodeJwtTokenUseCase UseCase для декодировки jwt токена
  * @property shareEntityCrudRepository CRUD репозиторий для хранения сущнстей share-auth токенов
  * @property userEntityCrudRepository CRUD репозиторий для хранения сущнстей пользователя
- * @property getCurrentLocalDateTimeUseCase Получение текущей даты в формате [LocalDateTime]
+ * @property getCurrentInstantUseCase Получение текущей даты в формате [Instant]
+ * @property sessionProcessor Обработчик сессии
+ * @property sessionsSafeRepository Безопасный репозиторий для взаимодействия с сессиями
  * @property shareTokenLifeTime Время жизни auth-share токена в сек.
  * @property expireVerificationValidator Средство проверки истечения срока действия
  */
 @Service
-internal class ShareAuthenticationServiceImpl @Autowired constructor(
-    private val jwtProcessor: JwtProcessor,
+private class ShareAuthenticationServiceImpl @Autowired constructor(
+    private val decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
     private val shareEntityCrudRepository: ShareEntityCrudRepository,
     private val userEntityCrudRepository: UserEntityCrudRepository,
-    private val getCurrentLocalDateTimeUseCase: GetCurrentLocalDateTimeUseCase,
+    private val getCurrentInstantUseCase: GetCurrentInstantUseCase,
     @Value("\${$KEY_SHARE_TOKEN_LIFE_TIME}") private val shareTokenLifeTime: Long,
-    private val expireVerificationValidator: ExpireVerificationValidator
+    private val expireVerificationValidator: ExpireVerificationValidator,
+    private val sessionsSafeRepository: SessionsSafeRepository,
+    private val sessionProcessor: SessionProcessor,
 ) : ShareAuthenticationService {
 
-    override suspend fun createShareAuthToken(refreshToken: String): String {
-        val shareEntity = jwtProcessor.verifyRefreshToken(refreshToken).let {
-            ShareEntity(
-                userId = it.userId,
-                sessionId = it.tokenId,
-                createdAt = getCurrentLocalDateTimeUseCase(),
-                expiresAt = getCurrentLocalDateTimeUseCase().plusSeconds(shareTokenLifeTime),
-                status = TokenStatus.ACTIVE
-            )
-        }
+    override suspend fun createShareAuthToken(sessionId: String): String {
+        val shareEntity = (sessionsSafeRepository.findSessionById(sessionId) ?: throw TokenNotFoundException())
+            .also { if (it.status != EntityStatus.ACTIVE) throw StatusException("required status ${EntityStatus.ACTIVE} but found ${it.status}") }
+            .let {
+                ShareEntity(
+                    userId = it.userId,
+                    sessionId = sessionId,
+                    createdAt = getCurrentInstantUseCase(),
+                    expiresAt = getCurrentInstantUseCase().plusSeconds(shareTokenLifeTime),
+                    status = EntityStatus.ACTIVE
+                )
+            }
         return shareEntityCrudRepository.save(shareEntity).id
     }
 
     override suspend fun login(shareToken: String, userInfo: JsonMap): JwtPair {
         val shareEntity = (shareEntityCrudRepository.findById(shareToken)
             ?: throw TokenNotFoundException("share-auth token $shareToken not found")).also {
-            if (it.status != TokenStatus.ACTIVE) throw TokenStatusException("Token`s status is not ACTIVE. Status for $shareToken is ${it.status}")
+            if (it.status != EntityStatus.ACTIVE) throw StatusException("Token`s status is not ACTIVE. Status for $shareToken is ${it.status}")
             expireVerificationValidator(it.expiresAt)
-            jwtProcessor.verifyRefreshTokenById(it.sessionId)
+            sessionsSafeRepository.verifyValidationSession(it.sessionId)
         }
         val userEntity = userEntityCrudRepository.findById(shareEntity.userId)
             ?: throw UserNotFoundException("User with id = ${shareEntity.userId} not found")
@@ -87,11 +96,11 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
             )
         }.let { JsonMap(it) }
 
-        val createdSession = jwtProcessor.createSession(
-            userId = userEntity.id, userLogin = userEntity.login, userInfo = shareAuthUserInfo
+        return sessionProcessor.createSession(
+            userId = userEntity.id,
+            userLogin = userEntity.login,
+            userInfo = shareAuthUserInfo
         )
-        shareEntityCrudRepository.save(shareEntity.copy(status = TokenStatus.INVALID))
-        return createdSession
     }
 
     companion object {

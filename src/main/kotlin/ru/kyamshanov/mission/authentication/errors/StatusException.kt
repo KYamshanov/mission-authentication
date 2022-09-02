@@ -3,4 +3,4 @@ package ru.kyamshanov.mission.authentication.errors
 /**
  * Исключение связанное со статусом токена
  */
-internal class TokenStatusException(message: String?) : Exception(message)
+internal class StatusException(message: String?) : Exception(message)
