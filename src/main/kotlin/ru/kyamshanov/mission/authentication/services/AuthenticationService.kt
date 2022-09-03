@@ -6,7 +6,7 @@ import ru.kyamshanov.mission.authentication.errors.*
 import ru.kyamshanov.mission.authentication.models.JsonMap
 import ru.kyamshanov.mission.authentication.models.JwtPair
 import ru.kyamshanov.mission.authentication.models.User
-import ru.kyamshanov.mission.authentication.propcessors.JwtProcessor
+import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
 import ru.kyamshanov.mission.authentication.propcessors.UserProcessor
 
 /**
@@ -24,14 +24,6 @@ internal interface AuthenticationService {
     suspend fun login(user: User, userInfo: JsonMap): JwtPair
 
     /**
-     * Проверить access токен
-     * @param accessToken токен
-     * @throws TokenTypeException Если тип токена не ACCESS
-     * @throws TokenExpireException Если время действия токена истекло
-     */
-    fun verifyAccess(accessToken: String)
-
-    /**
      * Проверить и обновить refresh токен
      * @param refreshToken токен
      * @param userInfo Информация о пользователе
@@ -43,34 +35,30 @@ internal interface AuthenticationService {
      *
      * @return Новую пару JWT токенов [JwtPair]
      */
-    suspend fun verifyAndUpdateRefreshToken(refreshToken: String, userInfo: JsonMap): JwtPair
+    suspend fun refreshSession(refreshToken: String, userInfo: JsonMap): JwtPair
 }
 
 /**
  * Реализация [AuthenticationService]
  * @property userProcessor Обработчик пользоваетля
- * @property jwtProcessor Обработчик JWT
+ * @property sessionProcessor Обработчик JWT
  */
 @Service
 internal class AuthenticationServiceImpl @Autowired constructor(
     private val userProcessor: UserProcessor,
-    private val jwtProcessor: JwtProcessor
+    private val sessionProcessor: SessionProcessor
 ) : AuthenticationService {
 
     override suspend fun login(user: User, userInfo: JsonMap): JwtPair =
         userProcessor.verify(user)
             .let {
-                jwtProcessor.createSession(
+                sessionProcessor.createSession(
                     userId = requireNotNull(it.id),
                     userLogin = it.login,
                     userInfo = userInfo
                 )
             }
 
-    override fun verifyAccess(accessToken: String) {
-        jwtProcessor.verifyAccessToken(accessToken)
-    }
-
-    override suspend fun verifyAndUpdateRefreshToken(refreshToken: String, userInfo: JsonMap) =
-        jwtProcessor.refreshSession(refreshToken, userInfo)
+    override suspend fun refreshSession(refreshToken: String, userInfo: JsonMap) =
+        sessionProcessor.refreshSession(refreshToken, userInfo)
 }

@@ -105,7 +105,7 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: RefreshRqDto
     ): ResponseEntity<TokensRsDto> =
         try {
-            authenticationService.verifyAndUpdateRefreshToken(body.refreshToken, JsonMap(body.info))
+            authenticationService.refreshSession(body.refreshToken, JsonMap(body.info))
                 .let { TokensRsDto(it.accessToken, it.refreshToken) }
                 .let { ResponseEntity(it, HttpStatus.OK) }
         } catch (e: Throwable) {

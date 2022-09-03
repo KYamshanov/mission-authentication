@@ -8,10 +8,13 @@ import ru.kyamshanov.mission.authentication.GlobalConstants
 import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
 import ru.kyamshanov.mission.authentication.entities.BlockAccessTokenEntity
-import ru.kyamshanov.mission.authentication.errors.TokenStatusException
+import ru.kyamshanov.mission.authentication.entities.TokenStatus
+import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
 import ru.kyamshanov.mission.authentication.errors.TokenTypeException
-import ru.kyamshanov.mission.authentication.propcessors.JwtProcessor
+import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
 import ru.kyamshanov.mission.authentication.repositories.BlockedAccessTokenRepository
+import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
+import java.time.Instant
 
 /**
  * Сервис блокировки
@@ -29,46 +32,39 @@ internal interface BlockingService {
      * @param accessToken Токен
      */
     suspend fun blockAccess(accessToken: String)
-
-    /**
-     * Проверка блокировки access токена
-     * @param accessToken Токен
-     */
-    suspend fun verifyAccess(accessToken: String)
 }
 
 /**
  * Реализация [BlockingService]
- * @property jwtProcessor Обработчик JWT
+ * @property sessionProcessor Обработчик JWT
  */
 @Service
 internal class BlockingServiceImpl @Autowired constructor(
-    private val jwtProcessor: JwtProcessor,
+    private val sessionProcessor: SessionProcessor,
     private val decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
     private val expireVerificationValidator: ExpireVerificationValidator,
-    private val blockedAccessTokenRepository: BlockedAccessTokenRepository
+    private val blockedAccessTokenRepository: BlockedAccessTokenRepository,
+    private val sessionsSafeRepository: SessionsSafeRepository
 ) : BlockingService {
 
-    override suspend fun blockSession(refreshToken: String) =
-        jwtProcessor.blockRefreshToken(refreshToken)
+    override suspend fun blockSession(refreshToken: String) {
+        val sessionEntity = decodeJwtTokenUseCase.decode(refreshToken).run {
+            (sessionsSafeRepository.findByRefreshId(jwtId) ?: throw TokenNotFoundException())
+                .copy(status = TokenStatus.PAUSED)
+        }
+        blockAccessToken(sessionEntity.sessionId, sessionEntity.expiresAt)
+        sessionsSafeRepository.save(sessionEntity)
+    }
 
     override suspend fun blockAccess(accessToken: String) {
-        val blockEntity = decodeJwtTokenUseCase.decode(accessToken).let {
-            expireVerificationValidator(requireNotNull(it.expiresAt))
-            if (it.type != GlobalConstants.ACCESS_TOKEN_TYPE) throw TokenTypeException("required ${GlobalConstants.ACCESS_TOKEN_TYPE} token type but found ${it.type}")
-            BlockAccessTokenEntity(it.jwtId, it.expiresAt)
-        }
-        withContext(Dispatchers.IO) {
-            blockedAccessTokenRepository.save(blockEntity)
-        }
+        val jwtModel = decodeJwtTokenUseCase.decode(accessToken)
+        expireVerificationValidator(requireNotNull(jwtModel.expiresAt))
+        if (jwtModel.type != GlobalConstants.ACCESS_TOKEN_TYPE) throw TokenTypeException("required ${GlobalConstants.ACCESS_TOKEN_TYPE} token type but found ${jwtModel.type}")
+        blockAccessToken(jwtModel.jwtId, jwtModel.expiresAt)
     }
 
-    override suspend fun verifyAccess(accessToken: String) {
-        decodeJwtTokenUseCase.decode(accessToken).run {
-            if (type != GlobalConstants.ACCESS_TOKEN_TYPE) throw TokenTypeException("required ${GlobalConstants.ACCESS_TOKEN_TYPE} token type but found $type")
-            if (blockedAccessTokenRepository.existsById(jwtId)) throw TokenStatusException("Token with id $jwtId was blocked")
-        }
+    private suspend fun blockAccessToken(sessionId: String, expiresAt: Instant): Unit = withContext(Dispatchers.IO) {
+        val blockEntity = BlockAccessTokenEntity(sessionId, expiresAt)
+        blockedAccessTokenRepository.save(blockEntity)
     }
-
-    private fun
 }
