@@ -44,8 +44,8 @@ internal class ProcessorsConfiguration(
         @UserVerifyNormal
         userVerifyProcessor: UserVerifyProcessor,
         expireVerificationValidator: ExpireVerificationValidator
-    ): JwtProcessor =
-        JwtProcessorImpl(
+    ): SessionProcessor =
+        SessionProcessorImpl(
             refreshTokenTimeLife = refreshTokenTimeLife,
             accessTokenTimeLife = accessTokenTimeLife,
             sessionsSafeRepository = sessionsSafeRepository,

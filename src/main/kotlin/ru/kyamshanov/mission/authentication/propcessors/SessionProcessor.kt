@@ -18,7 +18,7 @@ import java.util.UUID
 /**
  * Обработчик JWT
  */
-internal interface JwtProcessor {
+internal interface SessionProcessor {
 
     /**
      * Создать сессию
@@ -55,9 +55,9 @@ internal interface JwtProcessor {
      * @param refreshToken Рефреш токен
      * @throws TokenTypeException Если тип токена не REFRESH
      * @throws TokenExpireException Если время действия токена истекло
-     * @return Конвертированный токен из [String] в [JwtTokenModel]
+     * @return Конвертированный токен из [String] в [JwtModel]
      */
-    suspend fun verifyRefreshToken(refreshToken: String): JwtTokenModel
+    suspend fun verifyRefreshToken(refreshToken: String): SessionModel
 
     /**
      * Проверить активность refreshToken по id
@@ -66,7 +66,7 @@ internal interface JwtProcessor {
      * @throws TokenExpireException Если время действия токена истекло
      * @return Информацию о refreshToken если он активный
      */
-    suspend fun verifySessionById(sessionId: String): JwtTokenModel
+    suspend fun verifySessionById(sessionId: String): SessionModel
 
     /**
      * Блокировать рефреш токен
@@ -78,7 +78,7 @@ internal interface JwtProcessor {
 }
 
 /**
- * Реализация [JwtProcessor]
+ * Реализация [SessionProcessor]
  * @property refreshTokenTimeLife Время жизки refresh токена в сек.
  * @property accessTokenTimeLife Время жизни access токена в сек.
  * @property sessionsSafeRepository Безопасный репозиторий для сохранения/получения токенов
@@ -87,7 +87,7 @@ internal interface JwtProcessor {
  * @property GenerateJwtTokenUseCase UseCase для генерации JWT токена
  * @property userVerifyProcessor Средство для проверки данных пользователя
  */
-internal class JwtProcessorImpl(
+internal class SessionProcessorImpl(
     private val refreshTokenTimeLife: Long,
     private val accessTokenTimeLife: Long,
     private val sessionsSafeRepository: SessionsSafeRepository,
@@ -96,7 +96,7 @@ internal class JwtProcessorImpl(
     private val generateJwtTokenUseCase: GenerateJwtTokenUseCase,
     private val decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
     private val userVerifyProcessor: UserVerifyProcessor
-) : JwtProcessor {
+) : SessionProcessor {
     override suspend fun createSession(userId: String, userLogin: String, userInfo: JsonMap): JwtPair {
         if (userVerifyProcessor.checkInfo(userInfo).not()) throw IllegalArgumentException("userInfo is invalid")
 
@@ -116,16 +116,16 @@ internal class JwtProcessorImpl(
         return true
     }
 
-    override suspend fun verifyRefreshToken(refreshToken: String): JwtTokenModel =
+    override suspend fun verifyRefreshToken(refreshToken: String): SessionModel =
         refreshToken.parseRefreshToken().second.toModel()
 
-    override suspend fun verifySessionById(sessionId: String): JwtTokenModel =
+    override suspend fun verifySessionById(sessionId: String): SessionModel =
         (sessionsSafeRepository.findByRefreshId(sessionId) ?: throw TokenNotFoundException()).apply { validate() }
             .toModel()
 
     override suspend fun blockRefreshToken(refreshToken: String) {
         val decodedJWT = decodeJwtTokenUseCase.decode(refreshToken)
-        if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but was find ${decodedJWT.type}")
+        if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but found ${decodedJWT.type}")
         (sessionsSafeRepository.findByRefreshId(decodedJWT.jwtId) ?: throw TokenNotFoundException())
             .copy(status = TokenStatus.PAUSED)
             .also { sessionsSafeRepository.save(it) }

@@ -11,10 +11,10 @@ internal fun UserEntity.toModel(): User = User(login, MASKED_PASSWORD, id)
 
 /**
  * Конвертировать сущность сессионного токена в модель
- * [SessionEntity] -> [JwtTokenModel]
+ * [SessionEntity] -> [SessionModel]
  */
-internal fun SessionEntity.toModel(): JwtTokenModel = JwtTokenModel(
-    tokenId = id,
+internal fun SessionEntity.toModel(): SessionModel = SessionModel(
+    id = id,
     userId = userId,
     createdAt = createdAt,
     updatedAt = updatedAt,
