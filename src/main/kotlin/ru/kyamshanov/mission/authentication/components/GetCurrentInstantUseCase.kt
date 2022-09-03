@@ -15,3 +15,4 @@ internal class GetCurrentInstantUseCase {
      */
     operator fun invoke(): Instant = Instant.now()
 }
+

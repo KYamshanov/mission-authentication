@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import ru.kyamshanov.mission.authentication.GlobalConstants.KEY_SHARE_TOKEN_LIFE_TIME
 import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
-import ru.kyamshanov.mission.authentication.components.GetCurrentLocalDateTimeUseCase
+import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.entities.ShareEntity
 import ru.kyamshanov.mission.authentication.entities.TokenStatus
 import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
@@ -16,7 +16,7 @@ import ru.kyamshanov.mission.authentication.models.JwtPair
 import ru.kyamshanov.mission.authentication.propcessors.JwtProcessor
 import ru.kyamshanov.mission.authentication.repositories.ShareEntityCrudRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * Сервис для внешней аутентификации по токену
@@ -43,7 +43,7 @@ internal interface ShareAuthenticationService {
  * @property jwtProcessor Обработчик JWT
  * @property shareEntityCrudRepository CRUD репозиторий для хранения сущнстей share-auth токенов
  * @property userEntityCrudRepository CRUD репозиторий для хранения сущнстей пользователя
- * @property getCurrentLocalDateTimeUseCase Получение текущей даты в формате [LocalDateTime]
+ * @property getCurrentInstantUseCase Получение текущей даты в формате [Instant]
  * @property shareTokenLifeTime Время жизни auth-share токена в сек.
  * @property expireVerificationValidator Средство проверки истечения срока действия
  */
@@ -52,7 +52,7 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
     private val jwtProcessor: JwtProcessor,
     private val shareEntityCrudRepository: ShareEntityCrudRepository,
     private val userEntityCrudRepository: UserEntityCrudRepository,
-    private val getCurrentLocalDateTimeUseCase: GetCurrentLocalDateTimeUseCase,
+    private val getCurrentInstantUseCase: GetCurrentInstantUseCase,
     @Value("\${$KEY_SHARE_TOKEN_LIFE_TIME}") private val shareTokenLifeTime: Long,
     private val expireVerificationValidator: ExpireVerificationValidator
 ) : ShareAuthenticationService {
@@ -62,8 +62,8 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
             ShareEntity(
                 userId = it.userId,
                 sessionId = it.tokenId,
-                createdAt = getCurrentLocalDateTimeUseCase(),
-                expiresAt = getCurrentLocalDateTimeUseCase().plusSeconds(shareTokenLifeTime),
+                createdAt = getCurrentInstantUseCase(),
+                expiresAt = getCurrentInstantUseCase().plusSeconds(shareTokenLifeTime),
                 status = TokenStatus.ACTIVE
             )
         }
@@ -75,7 +75,7 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
             ?: throw TokenNotFoundException("share-auth token $shareToken not found")).also {
             if (it.status != TokenStatus.ACTIVE) throw TokenStatusException("Token`s status is not ACTIVE. Status for $shareToken is ${it.status}")
             expireVerificationValidator(it.expiresAt)
-            jwtProcessor.verifyRefreshTokenById(it.sessionId)
+            jwtProcessor.verifySessionById(it.sessionId)
         }
         val userEntity = userEntityCrudRepository.findById(shareEntity.userId)
             ?: throw UserNotFoundException("User with id = ${shareEntity.userId} not found")
