@@ -69,4 +69,6 @@ internal class BlockingServiceImpl @Autowired constructor(
             if (blockedAccessTokenRepository.existsById(jwtId)) throw TokenStatusException("Token with id $jwtId was blocked")
         }
     }
+
+    private fun
 }

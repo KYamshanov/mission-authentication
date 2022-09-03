@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import ru.kyamshanov.mission.authentication.GlobalConstants
 import ru.kyamshanov.mission.authentication.components.*
 import ru.kyamshanov.mission.authentication.propcessors.*
-import ru.kyamshanov.mission.authentication.repositories.TokenSafeRepository
+import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
 
 /**
@@ -36,9 +36,8 @@ internal class ProcessorsConfiguration(
     @Scope(value = SCOPE_SINGLETON)
     fun jwtProcessor(
         algorithm: Algorithm,
-        tokenSafeRepository: TokenSafeRepository,
+        sessionsSafeRepository: SessionsSafeRepository,
         getCurrentDateUseCase: GetCurrentDateUseCase,
-        getCurrentLocalDateTimeUseCase: GetCurrentLocalDateTimeUseCase,
         getCurrentInstantUseCase: GetCurrentInstantUseCase,
         generateJwtTokenUseCase: GenerateJwtTokenUseCase,
         decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
@@ -49,8 +48,7 @@ internal class ProcessorsConfiguration(
         JwtProcessorImpl(
             refreshTokenTimeLife = refreshTokenTimeLife,
             accessTokenTimeLife = accessTokenTimeLife,
-            tokenSafeRepository = tokenSafeRepository,
-            getCurrentLocalDateTimeUseCase = getCurrentLocalDateTimeUseCase,
+            sessionsSafeRepository = sessionsSafeRepository,
             getCurrentInstantUseCase = getCurrentInstantUseCase,
             generateJwtTokenUseCase = generateJwtTokenUseCase,
             decodeJwtTokenUseCase = decodeJwtTokenUseCase,

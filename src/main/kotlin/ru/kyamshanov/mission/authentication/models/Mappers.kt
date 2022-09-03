@@ -1,6 +1,6 @@
 package ru.kyamshanov.mission.authentication.models
 
-import ru.kyamshanov.mission.authentication.entities.TokenEntity
+import ru.kyamshanov.mission.authentication.entities.SessionEntity
 import ru.kyamshanov.mission.authentication.entities.UserEntity
 
 /**
@@ -11,14 +11,14 @@ internal fun UserEntity.toModel(): User = User(login, MASKED_PASSWORD, id)
 
 /**
  * Конвертировать сущность сессионного токена в модель
- * [TokenEntity] -> [JwtTokenModel]
+ * [SessionEntity] -> [JwtTokenModel]
  */
-internal fun TokenEntity.toModel(): JwtTokenModel = JwtTokenModel(
+internal fun SessionEntity.toModel(): JwtTokenModel = JwtTokenModel(
     tokenId = id,
     userId = userId,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    expiresAt = refreshExpiresAt
+    expiresAt = expiresAt
 )
 
 private const val MASKED_PASSWORD = "MaSkEd"

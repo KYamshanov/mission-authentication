@@ -34,9 +34,9 @@ POST http://localhost:8081/auth/refresh
 Content-Type: application/json
 
 {
-  "refreshToken": "*.*.*",
-  "info": {
-    "fingerprint": "*",
+  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE4IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYyMjEyNDk4LCJqdGkiOiI2ZmM0OTE2OWExZGI0MjI4ODMxZDU3ZmNkZDNlYTAwZCJ9.puFUyE39_mpwer6QClBk0Ysh9tZQkTOKE0peaEBLynE"
+,  "info": {
+    "fingerprint": "d",
     "version": "_"
   }
 }

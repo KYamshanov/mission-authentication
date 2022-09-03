@@ -3,7 +3,7 @@ package ru.kyamshanov.mission.authentication.entities
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * Сущность таблицы - сессионные токены
@@ -21,9 +21,9 @@ internal data class ShareEntity(
     @Column("session_id")
     val sessionId: String,
     @Column("created_at")
-    val createdAt: LocalDateTime,
+    val createdAt: Instant,
     @Column("expires_at")
-    val expiresAt: LocalDateTime,
+    val expiresAt: Instant,
     @Column("status")
     val status: TokenStatus,
     @Id

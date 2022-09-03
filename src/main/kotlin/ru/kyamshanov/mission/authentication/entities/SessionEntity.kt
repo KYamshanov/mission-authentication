@@ -4,27 +4,33 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import ru.kyamshanov.mission.authentication.models.JsonMap
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * Сущность таблицы - сессионные токены
+ * @property sessionId Идентификатор сессии (устаналивается один раз при логине)
+ * @property refreshId Идентификатор рефреш токена сессии (устаналивается новый каждый раз при refresh)
  * @property userId Id юзера
  * @property createdAt Дата создания сущности
- * @property refreshExpiresAt Дата истечения срока действия рефреш токена
+ * @property expiresAt Дата истечения срока действия рефреш токена
  * @property status Статус сессии
  * @property sessionInfo Информация юзера создавшего сессиию
  * @property givenId Id сущности
  */
 @Table("auth_tokens")
-internal data class TokenEntity(
+internal data class SessionEntity(
+    @Column("sessionId")
+    val sessionId: String,
+    @Column("refreshId")
+    val refreshId: String,
     @Column("user_id")
     val userId: String,
     @Column("created_at")
-    val createdAt: LocalDateTime,
+    val createdAt: Instant,
     @Column("updated_at")
-    val updatedAt: LocalDateTime,
-    @Column("refresh_expires_at")
-    val refreshExpiresAt: LocalDateTime,
+    val updatedAt: Instant,
+    @Column("expires_at")
+    val expiresAt: Instant,
     @Column("status")
     val status: TokenStatus,
     @Column("info")

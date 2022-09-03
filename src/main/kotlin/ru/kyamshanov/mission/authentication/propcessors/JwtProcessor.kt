@@ -2,17 +2,18 @@ package ru.kyamshanov.mission.authentication.propcessors
 
 import ru.kyamshanov.mission.authentication.GlobalConstants.ACCESS_TOKEN_TYPE
 import ru.kyamshanov.mission.authentication.GlobalConstants.REFRESH_TOKEN_TYPE
-import ru.kyamshanov.mission.authentication.components.*
-import ru.kyamshanov.mission.authentication.entities.TokenEntity
+import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
+import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
+import ru.kyamshanov.mission.authentication.components.GenerateJwtTokenUseCase
+import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
+import ru.kyamshanov.mission.authentication.entities.SessionEntity
 import ru.kyamshanov.mission.authentication.entities.TokenStatus
 import ru.kyamshanov.mission.authentication.errors.*
 import ru.kyamshanov.mission.authentication.models.*
-import ru.kyamshanov.mission.authentication.repositories.TokenSafeRepository
+import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.temporal.ChronoUnit.SECONDS
-import java.util.*
+import java.util.UUID
 
 /**
  * Обработчик JWT
@@ -60,12 +61,12 @@ internal interface JwtProcessor {
 
     /**
      * Проверить активность refreshToken по id
-     * @param refreshTokenId Идентификатор refreshToken
+     * @param sessionId Идентификатор refreshToken
      * @throws TokenTypeException Если тип токена не REFRESH
      * @throws TokenExpireException Если время действия токена истекло
      * @return Информацию о refreshToken если он активный
      */
-    suspend fun verifyRefreshTokenById(refreshTokenId: String): JwtTokenModel
+    suspend fun verifySessionById(sessionId: String): JwtTokenModel
 
     /**
      * Блокировать рефреш токен
@@ -80,9 +81,8 @@ internal interface JwtProcessor {
  * Реализация [JwtProcessor]
  * @property refreshTokenTimeLife Время жизки refresh токена в сек.
  * @property accessTokenTimeLife Время жизни access токена в сек.
- * @property tokenSafeRepository Безопасный репозиторий для сохранения/получения токенов
+ * @property sessionsSafeRepository Безопасный репозиторий для сохранения/получения токенов
  * @property getCurrentInstantUseCase UseCase для получения текущей даты в формате [Instant]
- * @property getCurrentLocalDateTimeUseCase UseCase для получения текущей даты в формате [LocalDateTime]
  * @property expireVerificationValidator Средство проверки истечения срока действия
  * @property GenerateJwtTokenUseCase UseCase для генерации JWT токена
  * @property userVerifyProcessor Средство для проверки данных пользователя
@@ -90,8 +90,7 @@ internal interface JwtProcessor {
 internal class JwtProcessorImpl(
     private val refreshTokenTimeLife: Long,
     private val accessTokenTimeLife: Long,
-    private val tokenSafeRepository: TokenSafeRepository,
-    private val getCurrentLocalDateTimeUseCase: GetCurrentLocalDateTimeUseCase,
+    private val sessionsSafeRepository: SessionsSafeRepository,
     private val getCurrentInstantUseCase: GetCurrentInstantUseCase,
     private val expireVerificationValidator: ExpireVerificationValidator,
     private val generateJwtTokenUseCase: GenerateJwtTokenUseCase,
@@ -101,11 +100,11 @@ internal class JwtProcessorImpl(
     override suspend fun createSession(userId: String, userLogin: String, userInfo: JsonMap): JwtPair {
         if (userVerifyProcessor.checkInfo(userInfo).not()) throw IllegalArgumentException("userInfo is invalid")
 
-        val accessToken = newAccessToken(userId)
-        val refreshTokenEntity = generateRefreshTokenEntity(userId = userId, userInfo = userInfo)
-        val refreshToken = refreshTokenEntity.toRefreshToken(userLogin = userLogin)
+        val sessionEntity = generateSessionEntity(userId = userId, userInfo = userInfo)
+        val accessToken = sessionEntity.toAccessToken(userId)
+        val refreshToken = sessionEntity.toRefreshToken(userLogin)
 
-        tokenSafeRepository.save(refreshTokenEntity)
+        sessionsSafeRepository.save(sessionEntity)
         return JwtPair(accessToken = accessToken, refreshToken = refreshToken)
     }
 
@@ -120,15 +119,16 @@ internal class JwtProcessorImpl(
     override suspend fun verifyRefreshToken(refreshToken: String): JwtTokenModel =
         refreshToken.parseRefreshToken().second.toModel()
 
-    override suspend fun verifyRefreshTokenById(refreshTokenId: String): JwtTokenModel =
-        (tokenSafeRepository.findById(refreshTokenId) ?: throw TokenNotFoundException()).apply { validate() }.toModel()
+    override suspend fun verifySessionById(sessionId: String): JwtTokenModel =
+        (sessionsSafeRepository.findByRefreshId(sessionId) ?: throw TokenNotFoundException()).apply { validate() }
+            .toModel()
 
     override suspend fun blockRefreshToken(refreshToken: String) {
         val decodedJWT = decodeJwtTokenUseCase.decode(refreshToken)
         if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but was find ${decodedJWT.type}")
-        (tokenSafeRepository.findById(decodedJWT.jwtId) ?: throw TokenNotFoundException())
+        (sessionsSafeRepository.findByRefreshId(decodedJWT.jwtId) ?: throw TokenNotFoundException())
             .copy(status = TokenStatus.PAUSED)
-            .also { tokenSafeRepository.save(it) }
+            .also { sessionsSafeRepository.save(it) }
     }
 
     override suspend fun refreshSession(refreshToken: String, userInfo: JsonMap): JwtPair {
@@ -136,58 +136,62 @@ internal class JwtProcessorImpl(
         if (!userVerifyProcessor.verify(requireNotNull(token.sessionInfo), userInfo)) throw UserVerifyException()
 
         val userLogin = decodedJWT.subject.orEmpty()
-        val accessToken = newAccessToken(userLogin)
-        val refreshedTokenEntity = generateRefreshTokenEntity(token.userId, userInfo)
-        val refreshedToken = refreshedTokenEntity.toRefreshToken(userLogin)
+        val sessionEntity = generateSessionEntity(sessionId = token.sessionId,token.userId, userInfo)
+        val accessToken = sessionEntity.toAccessToken(userLogin)
+        val refreshedToken = sessionEntity.toRefreshToken(userLogin)
 
         if (token.sessionInfo != userInfo) {
-            token.copy(status = TokenStatus.INVALID, updatedAt = getCurrentLocalDateTimeUseCase())
-                .also { tokenSafeRepository.saveTokens(it, refreshedTokenEntity) }
+            token.copy(status = TokenStatus.INVALID, updatedAt = getCurrentInstantUseCase())
+                .also { sessionsSafeRepository.saveSessions(it, sessionEntity) }
         } else {
-            refreshedTokenEntity.copy(givenId = token.id, createdAt = token.createdAt)
-                .also { tokenSafeRepository.save(it) }
+            sessionEntity.copy(givenId = token.id, createdAt = token.createdAt)
+                .also { sessionsSafeRepository.save(it) }
         }
         return JwtPair(accessToken, refreshedToken)
     }
 
-    private fun generateRefreshTokenEntity(userId: String, userInfo: JsonMap): TokenEntity {
-        val createdAt = getCurrentLocalDateTimeUseCase()
-        val expiresAt = getCurrentLocalDateTimeUseCase().plusSeconds(refreshTokenTimeLife)
+    private fun generateSessionEntity(sessionId: String? = null, userId: String, userInfo: JsonMap): SessionEntity {
+        val createdAt = getCurrentInstantUseCase()
+        val expiresAt = getCurrentInstantUseCase().plusSeconds(refreshTokenTimeLife)
+        val refreshId = UUID.randomUUID().toString()
+        val session = sessionId ?: UUID.randomUUID().toString()
 
-        return TokenEntity(
+        return SessionEntity(
+            sessionId = session,
+            refreshId = refreshId,
             userId = userId,
             createdAt = createdAt,
             updatedAt = createdAt,
-            refreshExpiresAt = expiresAt,
+            expiresAt = expiresAt,
             status = TokenStatus.ACTIVE,
             sessionInfo = userInfo
         )
     }
 
-    private fun newAccessToken(userLogin: String): String = JwtModel(
-        jwtId = UUID.randomUUID().toString(),
+    private fun SessionEntity.toAccessToken(userLogin: String): String = JwtModel(
+        jwtId = sessionId,
         subject = userLogin,
         expiresAt = getCurrentInstantUseCase().plus(accessTokenTimeLife, SECONDS),
         type = ACCESS_TOKEN_TYPE
     ).let { generateJwtTokenUseCase(it) }
 
-    private fun TokenEntity.toRefreshToken(userLogin: String) = JwtModel(
-        jwtId = id,
+    private fun SessionEntity.toRefreshToken(userLogin: String): String = JwtModel(
+        jwtId = refreshId,
         type = REFRESH_TOKEN_TYPE,
-        expiresAt = refreshExpiresAt.atZone(ZoneId.systemDefault()).toInstant(),
+        expiresAt = expiresAt,
         subject = userLogin
     ).let { generateJwtTokenUseCase(it) }
 
-    private suspend fun String.parseRefreshToken(): Pair<JwtModel, TokenEntity> {
+    private suspend fun String.parseRefreshToken(): Pair<JwtModel, SessionEntity> {
         val decodedJWT = decodeJwtTokenUseCase.decode(this)
         if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but was find ${decodedJWT.type}")
         val token =
-            (tokenSafeRepository.findById(decodedJWT.jwtId) ?: throw TokenNotFoundException()).apply { validate() }
+            (sessionsSafeRepository.findByRefreshId(decodedJWT.jwtId) ?: throw TokenNotFoundException()).apply { validate() }
         return decodedJWT to token
     }
 
-    private fun TokenEntity.validate() {
-        expireVerificationValidator(refreshExpiresAt)
+    private fun SessionEntity.validate() {
+        expireVerificationValidator(expiresAt)
         if (status != TokenStatus.ACTIVE) throw TokenStatusException("current token status $status but needed ACTIVE")
     }
 }

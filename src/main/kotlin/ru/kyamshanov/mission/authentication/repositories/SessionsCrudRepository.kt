@@ -4,12 +4,14 @@ import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import ru.kyamshanov.mission.authentication.entities.TokenEntity
 import java.time.LocalDateTime
+import ru.kyamshanov.mission.authentication.entities.SessionEntity
 
 /**
  * CRUD репозиторий для хранения сущнстей сессионных токен
  */
-internal interface TokenCrudRepository : CoroutineCrudRepository<TokenEntity, String> {
+internal interface SessionsCrudRepository : CoroutineCrudRepository<SessionEntity, String> {
 
+    suspend fun findByRefreshId(refreshId: String): SessionEntity?
 
     /**
      * Удалить токены с истекшим сроком действия

@@ -1,6 +1,6 @@
 package ru.kyamshanov.mission.authentication.models
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * Модель JWT токена
@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 internal data class JwtTokenModel(
     val tokenId: String,
     val userId: String,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime,
-    val expiresAt: LocalDateTime,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val expiresAt: Instant,
 )
