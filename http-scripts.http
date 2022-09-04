@@ -25,8 +25,8 @@ POST http://localhost:8081/auth/check
 Content-Type: application/json
 
 {
-  "accessToken": "*.*.*",
-  "checkBlock": "true"
+  "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZDQ1NTg5MGI2MjM0MjVmOGNjM2YyNTQ2MWQ1M2E2YiIsInR0eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjYyMjk5MjgwLCJqdGkiOiIyNTQ2MmFjMS1hN2VkLTRjN2QtYTBlZC0yMWQ5YjdkZjNmYzAifQ.9kwSgDebLKe95d1CFyf_cBbELFv8m8Y01zJYGM5ommU",
+  "checkBlock": "false"
 }
 
 ### Проверка refresh token
@@ -34,7 +34,7 @@ POST http://localhost:8081/auth/refresh
 Content-Type: application/json
 
 {
-  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE4IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYyMjEyNDk4LCJqdGkiOiI2ZmM0OTE2OWExZGI0MjI4ODMxZDU3ZmNkZDNlYTAwZCJ9.puFUyE39_mpwer6QClBk0Ysh9tZQkTOKE0peaEBLynE"
+  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE4IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYyMzAwODcyLCJqdGkiOiIzZjgwNzdkYy1iZTVmLTRmNzgtOGIxYS0xMGRlYzQyYjdmZTgifQ.D09qQJcUHKgwpQhRBkPb_KHcLTsXcYzCinjsNJxS6Qs"
 ,  "info": {
     "fingerprint": "d",
     "version": "_"

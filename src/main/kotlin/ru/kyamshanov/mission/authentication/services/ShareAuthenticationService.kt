@@ -7,7 +7,7 @@ import ru.kyamshanov.mission.authentication.GlobalConstants.KEY_SHARE_TOKEN_LIFE
 import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
 import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.entities.ShareEntity
-import ru.kyamshanov.mission.authentication.entities.TokenStatus
+import ru.kyamshanov.mission.authentication.entities.EntityStatus
 import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
 import ru.kyamshanov.mission.authentication.errors.TokenStatusException
 import ru.kyamshanov.mission.authentication.errors.UserNotFoundException
@@ -64,7 +64,7 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
                 sessionId = it.id,
                 createdAt = getCurrentInstantUseCase(),
                 expiresAt = getCurrentInstantUseCase().plusSeconds(shareTokenLifeTime),
-                status = TokenStatus.ACTIVE
+                status = EntityStatus.ACTIVE
             )
         }
         return shareEntityCrudRepository.save(shareEntity).id
@@ -73,7 +73,7 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
     override suspend fun login(shareToken: String, userInfo: JsonMap): JwtPair {
         val shareEntity = (shareEntityCrudRepository.findById(shareToken)
             ?: throw TokenNotFoundException("share-auth token $shareToken not found")).also {
-            if (it.status != TokenStatus.ACTIVE) throw TokenStatusException("Token`s status is not ACTIVE. Status for $shareToken is ${it.status}")
+            if (it.status != EntityStatus.ACTIVE) throw TokenStatusException("Token`s status is not ACTIVE. Status for $shareToken is ${it.status}")
             expireVerificationValidator(it.expiresAt)
             sessionProcessor.verifySessionById(it.sessionId)
         }
@@ -90,7 +90,7 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
         val createdSession = sessionProcessor.createSession(
             userId = userEntity.id, userLogin = userEntity.login, userInfo = shareAuthUserInfo
         )
-        shareEntityCrudRepository.save(shareEntity.copy(status = TokenStatus.INVALID))
+        shareEntityCrudRepository.save(shareEntity.copy(status = EntityStatus.INVALID))
         return createdSession
     }
 

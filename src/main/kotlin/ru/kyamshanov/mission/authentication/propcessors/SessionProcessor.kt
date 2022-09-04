@@ -7,7 +7,7 @@ import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidat
 import ru.kyamshanov.mission.authentication.components.GenerateJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.entities.SessionEntity
-import ru.kyamshanov.mission.authentication.entities.TokenStatus
+import ru.kyamshanov.mission.authentication.entities.EntityStatus
 import ru.kyamshanov.mission.authentication.errors.*
 import ru.kyamshanov.mission.authentication.models.*
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
@@ -120,14 +120,14 @@ internal class SessionProcessorImpl(
         refreshToken.parseRefreshToken().second.toModel()
 
     override suspend fun verifySessionById(sessionId: String): SessionModel =
-        (sessionsSafeRepository.findByRefreshId(sessionId) ?: throw TokenNotFoundException()).apply { validate() }
+        (sessionsSafeRepository.findBySessionId(sessionId) ?: throw TokenNotFoundException()).apply { validate() }
             .toModel()
 
     override suspend fun blockRefreshToken(refreshToken: String) {
         val decodedJWT = decodeJwtTokenUseCase.decode(refreshToken)
         if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but found ${decodedJWT.type}")
         (sessionsSafeRepository.findByRefreshId(decodedJWT.jwtId) ?: throw TokenNotFoundException())
-            .copy(status = TokenStatus.PAUSED)
+            .copy(status = EntityStatus.PAUSED)
             .also { sessionsSafeRepository.save(it) }
     }
 
@@ -136,12 +136,12 @@ internal class SessionProcessorImpl(
         if (!userVerifyProcessor.verify(requireNotNull(token.sessionInfo), userInfo)) throw UserVerifyException()
 
         val userLogin = decodedJWT.subject.orEmpty()
-        val sessionEntity = generateSessionEntity(sessionId = token.sessionId,token.userId, userInfo)
+        val sessionEntity = generateSessionEntity(sessionId = token.sessionId, token.userId, userInfo)
         val accessToken = sessionEntity.toAccessToken(userLogin)
         val refreshedToken = sessionEntity.toRefreshToken(userLogin)
 
         if (token.sessionInfo != userInfo) {
-            token.copy(status = TokenStatus.INVALID, updatedAt = getCurrentInstantUseCase())
+            token.copy(status = EntityStatus.INVALID, updatedAt = getCurrentInstantUseCase())
                 .also { sessionsSafeRepository.saveSessions(it, sessionEntity) }
         } else {
             sessionEntity.copy(givenId = token.id, createdAt = token.createdAt)
@@ -150,26 +150,14 @@ internal class SessionProcessorImpl(
         return JwtPair(accessToken, refreshedToken)
     }
 
-    private fun generateSessionEntity(sessionId: String? = null, userId: String, userInfo: JsonMap): SessionEntity {
+    private fun generateSessionEntity(userId: String): SessionModel {
         val createdAt = getCurrentInstantUseCase()
-        val expiresAt = getCurrentInstantUseCase().plusSeconds(refreshTokenTimeLife)
-        val refreshId = UUID.randomUUID().toString()
-        val session = sessionId ?: UUID.randomUUID().toString()
 
-        return SessionEntity(
-            sessionId = session,
-            refreshId = refreshId,
-            userId = userId,
-            createdAt = createdAt,
-            updatedAt = createdAt,
-            expiresAt = expiresAt,
-            status = TokenStatus.ACTIVE,
-            sessionInfo = userInfo
-        )
+        return SessionModel()
     }
 
     private fun SessionEntity.toAccessToken(userLogin: String): String = JwtModel(
-        jwtId = sessionId,
+        jwtId = id,
         subject = userLogin,
         expiresAt = getCurrentInstantUseCase().plus(accessTokenTimeLife, SECONDS),
         type = ACCESS_TOKEN_TYPE
@@ -186,12 +174,13 @@ internal class SessionProcessorImpl(
         val decodedJWT = decodeJwtTokenUseCase.decode(this)
         if (decodedJWT.type != REFRESH_TOKEN_TYPE) throw TokenTypeException("required token type $REFRESH_TOKEN_TYPE but was find ${decodedJWT.type}")
         val token =
-            (sessionsSafeRepository.findByRefreshId(decodedJWT.jwtId) ?: throw TokenNotFoundException()).apply { validate() }
+            (sessionsSafeRepository.findByRefreshId(decodedJWT.jwtId)
+                ?: throw TokenNotFoundException()).apply { validate() }
         return decodedJWT to token
     }
 
     private fun SessionEntity.validate() {
         expireVerificationValidator(expiresAt)
-        if (status != TokenStatus.ACTIVE) throw TokenStatusException("current token status $status but needed ACTIVE")
+        if (status != EntityStatus.ACTIVE) throw TokenStatusException("current token status $status but needed ACTIVE")
     }
 }

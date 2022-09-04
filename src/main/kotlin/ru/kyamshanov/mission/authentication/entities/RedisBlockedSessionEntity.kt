@@ -8,6 +8,6 @@ import java.time.Instant
  * @property sessionId Идентификатор токена
  * @property expiresAt Дата прекращения действия токена
  */
-internal data class BlockAccessTokenEntity(
+internal data class RedisBlockedSessionEntity(
     val sessionId: String, val expiresAt: Instant
 ) : Serializable

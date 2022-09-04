@@ -11,7 +11,6 @@ import java.time.Instant
  * @property expiresAt Дата прекращения действия токена
  */
 internal data class SessionModel(
-    val id: String,
     val refreshId: String,
     val userId: String,
     val createdAt: Instant,

@@ -5,9 +5,11 @@
 DROP TABLE IF EXISTS auth_share;
 DROP TABLE IF EXISTS auth_sessions;
 DROP TABLE IF EXISTS auth_users;
-DROP TYPE IF EXISTS token_status;
+DROP TYPE IF EXISTS entity_status;
+DROP TYPE IF EXISTS auth_session_tokens;
+DROP INDEX IF EXISTS auth_sessions_session_id;
 
-CREATE TYPE token_status AS ENUM ('ACTIVE', 'PAUSED', 'INVALID');
+CREATE TYPE entity_status AS ENUM ('ACTIVE', 'PAUSED', 'BLOCKED', 'INVALID');
 
 CREATE TABLE auth_users
 (
@@ -19,27 +21,34 @@ CREATE TABLE auth_users
 CREATE TABLE auth_sessions
 (
     id         VARCHAR(50) PRIMARY KEY,
-    session_id VARCHAR(50)        NOT NULL,
-    refresh_id VARCHAR(50) UNIQUE NOT NULL,
-    user_id    VARCHAR(50)        NOT NULL,
-    created_at TIMESTAMPTZ        NOT NULL,
-    updated_at TIMESTAMPTZ        NOT NULL,
-    expires_at TIMESTAMPTZ        NOT NULL,
-    status     token_status       NOT NULL,
-    info       JSON               NOT NULL,
+    user_id    VARCHAR(50)   NOT NULL,
+    created_at TIMESTAMPTZ   NOT NULL,
+    updated_at TIMESTAMPTZ   NOT NULL,
+    status     entity_status NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES auth_users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE auth_session_tokens
+(
+    id         VARCHAR(50) PRIMARY KEY,
+    session_id VARCHAR(50)   NOT NULL,
+    created_at TIMESTAMPTZ   NOT NULL,
+    expires_at TIMESTAMPTZ   NOT NULL,
+    info       JSON          NOT NULL,
+
+    FOREIGN KEY (session_id) REFERENCES auth_sessions (id) ON DELETE CASCADE
 );
 
 CREATE TABLE auth_share
 (
     id         VARCHAR(50) PRIMARY KEY,
-    user_id    VARCHAR(50)  NOT NULL,
-    session_id VARCHAR(50)  NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL,
-    expires_at TIMESTAMPTZ  NOT NULL,
-    status     token_status NOT NULL,
+    user_id    VARCHAR(50)   NOT NULL,
+    session_id VARCHAR(50)   NOT NULL,
+    created_at TIMESTAMPTZ   NOT NULL,
+    expires_at TIMESTAMPTZ   NOT NULL,
+    status     entity_status NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES auth_users (id) ON DELETE CASCADE,
     FOREIGN KEY (session_id) REFERENCES auth_sessions (id) ON DELETE CASCADE
-)
+);

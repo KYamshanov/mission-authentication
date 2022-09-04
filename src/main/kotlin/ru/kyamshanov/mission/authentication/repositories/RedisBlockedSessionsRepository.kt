@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Repository
 import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
-import ru.kyamshanov.mission.authentication.entities.BlockAccessTokenEntity
+import ru.kyamshanov.mission.authentication.entities.RedisBlockedSessionEntity
 import java.time.Duration
 
 /**
@@ -16,7 +16,7 @@ import java.time.Duration
  */
 @Repository
 internal class RedisBlockedSessionsRepository @Autowired constructor(
-    private val reactiveRedisTemplate: ReactiveRedisTemplate<String, BlockAccessTokenEntity>,
+    private val reactiveRedisTemplate: ReactiveRedisTemplate<String, RedisBlockedSessionEntity>,
     private val getCurrentInstantUseCase: GetCurrentInstantUseCase
 ) {
 
@@ -24,7 +24,7 @@ internal class RedisBlockedSessionsRepository @Autowired constructor(
      * Сохранить блокировку access токена
      * @param entity Сущность блокировки
      */
-    suspend fun save(entity: BlockAccessTokenEntity) = withContext(Dispatchers.IO) {
+    suspend fun save(entity: RedisBlockedSessionEntity) = withContext(Dispatchers.IO) {
         reactiveRedisTemplate.opsForValue().setIfAbsent(
             entity.sessionId,
             entity,

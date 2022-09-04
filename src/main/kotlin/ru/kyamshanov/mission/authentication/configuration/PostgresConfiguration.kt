@@ -15,7 +15,7 @@ import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 import org.springframework.transaction.annotation.EnableTransactionManagement
 import ru.kyamshanov.mission.authentication.GlobalConstants
-import ru.kyamshanov.mission.authentication.entities.TokenStatus
+import ru.kyamshanov.mission.authentication.entities.EntityStatus
 import ru.kyamshanov.mission.authentication.models.JsonMap
 
 
@@ -40,7 +40,7 @@ internal class PostgresConfiguration @Autowired constructor(
     private val username: String,
     private val jsonMapStringToMapConverter: Converter<Json, JsonMap>,
     private val mapToJsonStringConverterMap: Converter<JsonMap, Json>,
-    private val tokenStatusConverter: Converter<TokenStatus, TokenStatus>
+    private val entityStatusConverter: Converter<EntityStatus, EntityStatus>
 ) : AbstractR2dbcConfiguration() {
 
     @Bean
@@ -54,7 +54,7 @@ internal class PostgresConfiguration @Autowired constructor(
                 .password(password)
                 .schema(schema)
                 .codecRegistrar(
-                    EnumCodec.builder().withEnum("token_status", TokenStatus::class.java).build()
+                    EnumCodec.builder().withEnum("entity_status", EntityStatus::class.java).build()
                 )
                 .build()
         )
@@ -65,7 +65,7 @@ internal class PostgresConfiguration @Autowired constructor(
         mutableListOf<Any>().apply {
             add(jsonMapStringToMapConverter)
             add(mapToJsonStringConverterMap)
-            add(tokenStatusConverter)
+            add(entityStatusConverter)
         }.let {
             R2dbcCustomConversions(storeConversions, it)
         }

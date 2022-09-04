@@ -3,7 +3,6 @@ package ru.kyamshanov.mission.authentication.entities
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
-import ru.kyamshanov.mission.authentication.models.JsonMap
 import java.time.Instant
 
 /**
@@ -19,22 +18,14 @@ import java.time.Instant
  */
 @Table("auth_sessions")
 internal data class SessionEntity(
-    @Column("session_id")
-    val sessionId: String,
-    @Column("refresh_id")
-    val refreshId: String,
     @Column("user_id")
     val userId: String,
     @Column("created_at")
     val createdAt: Instant,
     @Column("updated_at")
     val updatedAt: Instant,
-    @Column("expires_at")
-    val expiresAt: Instant,
     @Column("status")
-    val status: TokenStatus,
-    @Column("info")
-    val sessionInfo: JsonMap,
+    val status: EntityStatus,
     @Id
     @Column("id")
     private val givenId: String? = null

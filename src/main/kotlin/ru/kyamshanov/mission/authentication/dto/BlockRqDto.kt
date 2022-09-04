@@ -2,8 +2,8 @@ package ru.kyamshanov.mission.authentication.dto
 
 /**
  * Dto-model Тело запроса на блокировку токена
- * @property token Токен
+ * @property sessionId Сессия
  */
 data class BlockRqDto(
-    val token: String
+    val sessionId: String
 )

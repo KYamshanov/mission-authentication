@@ -1,6 +1,7 @@
 package ru.kyamshanov.mission.authentication.configuration
 
 import com.auth0.jwt.algorithms.Algorithm
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_SINGLETON
 import org.springframework.context.annotation.Bean
@@ -16,6 +17,12 @@ import ru.kyamshanov.mission.authentication.propcessors.*
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
 
+@Qualifier
+internal annotation class RefreshTokenTimeLifeInSec
+
+@Qualifier
+internal annotation class AccessTokenTimeLifeInSec
+
 /**
  * Конфигурация обработчиков
  */
@@ -26,6 +33,16 @@ internal class ProcessorsConfiguration(
     @Value("\${${GlobalConstants.KEY_ACCESS_TIME_LIFE}}")
     private val accessTokenTimeLife: Long
 ) {
+
+    @Bean
+    @AccessTokenTimeLifeInSec
+    @Scope(value = SCOPE_SINGLETON)
+    fun bindAccessTokenTimeLife(): Long = accessTokenTimeLife
+
+    @Bean
+    @RefreshTokenTimeLifeInSec
+    @Scope(value = SCOPE_SINGLETON)
+    fun bindRefreshTokenTimeLife(): Long = refreshTokenTimeLife
 
     @Bean
     @Scope(value = SCOPE_SINGLETON)

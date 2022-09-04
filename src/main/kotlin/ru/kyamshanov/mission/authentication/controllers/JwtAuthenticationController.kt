@@ -11,6 +11,7 @@ import ru.kyamshanov.mission.authentication.components.UserFactory
 import ru.kyamshanov.mission.authentication.dto.*
 import ru.kyamshanov.mission.authentication.errors.UserInfoRequiredException
 import ru.kyamshanov.mission.authentication.models.JsonMap
+import ru.kyamshanov.mission.authentication.propcessors.VerifyService
 import ru.kyamshanov.mission.authentication.services.*
 
 /**
@@ -98,7 +99,7 @@ internal class JwtAuthenticationController @Autowired constructor(
      * @return [ResponseEntity] С парой новых токенов
      */
     @PostMapping("refresh")
-    suspend fun validateTokens(
+    suspend fun refresh(
         @RequestBody(required = true) body: RefreshRqDto
     ): ResponseEntity<TokensRsDto> =
         try {
@@ -117,11 +118,11 @@ internal class JwtAuthenticationController @Autowired constructor(
      * @return [ResponseEntity] Статус обработки
      */
     @PostMapping("block")
-    suspend fun blockToken(
+    suspend fun blockSession(
         @RequestBody(required = true) body: BlockRqDto
     ): ResponseEntity<Unit> =
         try {
-            blockingService.blockSession(body.token)
+            blockingService.blockSession(body.sessionId)
             ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -159,24 +160,6 @@ internal class JwtAuthenticationController @Autowired constructor(
         try {
             val jwtPair = shareAuthenticationService.login(body.authShareToken, JsonMap(body.info))
             ResponseEntity(TokensRsDto(jwtPair.accessToken, jwtPair.refreshToken), HttpStatus.OK)
-        } catch (e: Throwable) {
-            e.printStackTrace()
-            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
-        }
-
-    /**
-     * End-point (POST) : /block_access
-     * Блокировка access токена
-     * @param body Тело запроса
-     * @return [ResponseEntity] Статус обработки
-     */
-    @PostMapping("block_access")
-    suspend fun blockAccessToken(
-        @RequestBody(required = true) body: BlockRqDto
-    ): ResponseEntity<TokensRsDto> =
-        try {
-            blockingService.blockAccess(body.token)
-            ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)

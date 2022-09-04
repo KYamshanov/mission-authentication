@@ -1,14 +1,13 @@
-package ru.kyamshanov.mission.authentication.services
+package ru.kyamshanov.mission.authentication.propcessors
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import ru.kyamshanov.mission.authentication.GlobalConstants
 import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
 import ru.kyamshanov.mission.authentication.errors.TokenStatusException
 import ru.kyamshanov.mission.authentication.errors.TokenTypeException
 import ru.kyamshanov.mission.authentication.models.JwtModel
-import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
 import ru.kyamshanov.mission.authentication.repositories.RedisBlockedSessionsRepository
 
 /**
@@ -29,7 +28,7 @@ internal interface VerifyService {
  * Реализация [BlockingService]
  * @property sessionProcessor Обработчик JWT
  */
-@Service
+@Component
 internal class VerifyServiceImpl @Autowired constructor(
     private val sessionProcessor: SessionProcessor,
     private val redisBlockedSessionsRepository: RedisBlockedSessionsRepository,
