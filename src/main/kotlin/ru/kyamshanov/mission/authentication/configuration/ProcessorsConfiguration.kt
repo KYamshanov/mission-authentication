@@ -8,7 +8,10 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
 import org.springframework.security.crypto.password.PasswordEncoder
 import ru.kyamshanov.mission.authentication.GlobalConstants
-import ru.kyamshanov.mission.authentication.components.*
+import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
+import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
+import ru.kyamshanov.mission.authentication.components.GenerateJwtTokenUseCase
+import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.propcessors.*
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
@@ -37,7 +40,6 @@ internal class ProcessorsConfiguration(
     fun jwtProcessor(
         algorithm: Algorithm,
         sessionsSafeRepository: SessionsSafeRepository,
-        getCurrentDateUseCase: GetCurrentDateUseCase,
         getCurrentInstantUseCase: GetCurrentInstantUseCase,
         generateJwtTokenUseCase: GenerateJwtTokenUseCase,
         decodeJwtTokenUseCase: DecodeJwtTokenUseCase,

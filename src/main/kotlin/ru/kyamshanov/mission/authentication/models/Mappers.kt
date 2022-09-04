@@ -18,7 +18,9 @@ internal fun SessionEntity.toModel(): SessionModel = SessionModel(
     userId = userId,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    expiresAt = expiresAt
+    expiresAt = expiresAt,
+    refreshId = refreshId,
+    info = sessionInfo
 )
 
 private const val MASKED_PASSWORD = "MaSkEd"

@@ -5,14 +5,11 @@ import org.springframework.stereotype.Service
 import ru.kyamshanov.mission.authentication.GlobalConstants
 import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
-import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
 import ru.kyamshanov.mission.authentication.errors.TokenStatusException
 import ru.kyamshanov.mission.authentication.errors.TokenTypeException
 import ru.kyamshanov.mission.authentication.models.JwtModel
-import ru.kyamshanov.mission.authentication.models.SessionModel
 import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
-import ru.kyamshanov.mission.authentication.repositories.BlockedAccessTokenRepository
-import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
+import ru.kyamshanov.mission.authentication.repositories.RedisBlockedSessionsRepository
 
 /**
  * Сервис блокировки
@@ -35,17 +32,16 @@ internal interface VerifyService {
 @Service
 internal class VerifyServiceImpl @Autowired constructor(
     private val sessionProcessor: SessionProcessor,
-    private val blockedAccessTokenRepository: BlockedAccessTokenRepository,
+    private val redisBlockedSessionsRepository: RedisBlockedSessionsRepository,
     private val decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
-    private val expireVerificationValidator: ExpireVerificationValidator,
-    private val sessionsSafeRepository: SessionsSafeRepository
+    private val expireVerificationValidator: ExpireVerificationValidator
 ) : VerifyService {
 
 
     override suspend fun verifyAccess(accessToken: String, checkBlockingSession: Boolean): JwtModel {
         val jwtModel = verifyJwtToken(accessToken, GlobalConstants.ACCESS_TOKEN_TYPE)
-        if (checkBlockingSession)
-            if (blockedAccessTokenRepository.existsById(jwtModel.jwtId)) throw TokenStatusException("Token with id ${jwtModel.jwtId} was blocked")
+        if (checkBlockingSession && redisBlockedSessionsRepository.existsBySessionId(jwtModel.jwtId))
+            throw TokenStatusException("Session with id ${jwtModel.jwtId} was blocked")
         return jwtModel
     }
 

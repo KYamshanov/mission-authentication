@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.last
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.entities.SessionEntity
 
 /**
@@ -12,13 +13,16 @@ import ru.kyamshanov.mission.authentication.entities.SessionEntity
  */
 @Repository
 internal class SessionsSafeRepository @Autowired constructor(
-    private val sessionsCrudRepository: SessionsCrudRepository
+    private val sessionsCrudRepository: SessionsCrudRepository,
+    private val getCurrentInstantUseCase: GetCurrentInstantUseCase
 ) {
     suspend fun findByRefreshId(refreshId: String): SessionEntity? =
         sessionsCrudRepository.findByRefreshId(refreshId)
 
     suspend fun save(session: SessionEntity): SessionEntity =
         sessionsCrudRepository.save(session)
+
+    suspend fun deleteExpiredTokens() = sessionsCrudRepository.deleteExpiredTokens(getCurrentInstantUseCase())
 
     @Transactional
     suspend fun saveSessions(vararg sessions: SessionEntity) {

@@ -12,7 +12,7 @@ import ru.kyamshanov.mission.authentication.entities.TokenStatus
 import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
 import ru.kyamshanov.mission.authentication.errors.TokenTypeException
 import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
-import ru.kyamshanov.mission.authentication.repositories.BlockedAccessTokenRepository
+import ru.kyamshanov.mission.authentication.repositories.RedisBlockedSessionsRepository
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import java.time.Instant
 
@@ -43,7 +43,7 @@ internal class BlockingServiceImpl @Autowired constructor(
     private val sessionProcessor: SessionProcessor,
     private val decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
     private val expireVerificationValidator: ExpireVerificationValidator,
-    private val blockedAccessTokenRepository: BlockedAccessTokenRepository,
+    private val redisBlockedSessionsRepository: RedisBlockedSessionsRepository,
     private val sessionsSafeRepository: SessionsSafeRepository
 ) : BlockingService {
 
@@ -65,6 +65,6 @@ internal class BlockingServiceImpl @Autowired constructor(
 
     private suspend fun blockAccessToken(sessionId: String, expiresAt: Instant): Unit = withContext(Dispatchers.IO) {
         val blockEntity = BlockAccessTokenEntity(sessionId, expiresAt)
-        blockedAccessTokenRepository.save(blockEntity)
+        redisBlockedSessionsRepository.save(blockEntity)
     }
 }

@@ -5,8 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import ru.kyamshanov.mission.authentication.repositories.BlockedAccessTokenRepository
-import ru.kyamshanov.mission.authentication.repositories.TokenSafeRepository
+import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import java.util.concurrent.TimeUnit
 
 /**
@@ -14,8 +13,7 @@ import java.util.concurrent.TimeUnit
  */
 @Component
 internal class ClearExpiredSessionsScheduledTask(
-    private val safeRepository: TokenSafeRepository,
-    private val accessTokenRepository: BlockedAccessTokenRepository
+    private val sessionsSafeRepository: SessionsSafeRepository
 ) {
 
     private val componentCoroutineScope = CoroutineScope(Dispatchers.IO)
@@ -24,15 +22,7 @@ internal class ClearExpiredSessionsScheduledTask(
     fun clearSessionTokens() {
         componentCoroutineScope.launch {
             println("Deleting tokens")
-            safeRepository.deleteExpiredTokens()
-        }
-    }
-
-    @Scheduled(fixedRate = 30, timeUnit = TimeUnit.SECONDS)
-    fun clearBlockedAccessTokens() {
-        componentCoroutineScope.launch {
-            println("Deleting access tokens")
-            accessTokenRepository.clearExpiredTokens()
+            sessionsSafeRepository.deleteExpiredTokens()
         }
     }
 }

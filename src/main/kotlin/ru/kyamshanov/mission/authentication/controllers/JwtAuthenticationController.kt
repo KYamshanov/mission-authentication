@@ -11,10 +11,7 @@ import ru.kyamshanov.mission.authentication.components.UserFactory
 import ru.kyamshanov.mission.authentication.dto.*
 import ru.kyamshanov.mission.authentication.errors.UserInfoRequiredException
 import ru.kyamshanov.mission.authentication.models.JsonMap
-import ru.kyamshanov.mission.authentication.services.AuthenticationService
-import ru.kyamshanov.mission.authentication.services.BlockingService
-import ru.kyamshanov.mission.authentication.services.RegistrationService
-import ru.kyamshanov.mission.authentication.services.ShareAuthenticationService
+import ru.kyamshanov.mission.authentication.services.*
 
 /**
  * Контроллер для JWT авторизации
@@ -30,6 +27,7 @@ internal class JwtAuthenticationController @Autowired constructor(
     private val authenticationService: AuthenticationService,
     private val registrationService: RegistrationService,
     private val blockingService: BlockingService,
+    private val verifyService: VerifyService,
     private val shareAuthenticationService: ShareAuthenticationService,
     private val userFactory: UserFactory
 ) {
@@ -86,8 +84,7 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: CheckAccessRqDto
     ): ResponseEntity<Unit> =
         try {
-            authenticationService.verifyAccess(body.accessToken)
-            if (body.checkBlock) blockingService.verifyAccess(body.accessToken)
+            verifyService.verifyAccess(body.accessToken,body.checkBlock)
             ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()

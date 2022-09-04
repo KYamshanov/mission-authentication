@@ -46,7 +46,7 @@ POST http://localhost:8081/auth/block
 Content-Type: application/json
 
 {
-  "refreshToken": "*.*.*"
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE4IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYyMjk3MDg3LCJqdGkiOiIwNzMxZDFlOS1iNmI2LTQ2ODAtYTc0NC0yNTc4NmQ0MzdhZWUifQ.37EbKSZAUmJDqivzf807uBz3nJ5-aMfYocvtAP8Dras"
 }
 
 ### Создание share_auth токена для внешней аутентификации
@@ -62,8 +62,8 @@ POST http://localhost:8081/auth/share_login
 Content-Type: application/json
 
 {
-  "authShareToken": "*",
-  "info": {
+  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbjE4IiwidHR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNjYyMjk2NjIyLCJqdGkiOiI5MDY1NWUwMS1mZTdmLTQ5NWQtYWY5MS1iNTY5MDgwNmRhODcifQ.Izslov_1jQfHxpKUjbgAH61FmZ0K3iTqIbbujLg9IPo"
+,  "info": {
     "fingerprint": "*"
   }
 }

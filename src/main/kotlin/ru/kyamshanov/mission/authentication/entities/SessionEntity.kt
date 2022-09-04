@@ -17,11 +17,11 @@ import java.time.Instant
  * @property sessionInfo Информация юзера создавшего сессиию
  * @property givenId Id сущности
  */
-@Table("auth_tokens")
+@Table("auth_sessions")
 internal data class SessionEntity(
-    @Column("sessionId")
+    @Column("session_id")
     val sessionId: String,
-    @Column("refreshId")
+    @Column("refresh_id")
     val refreshId: String,
     @Column("user_id")
     val userId: String,
