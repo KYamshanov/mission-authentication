@@ -3,17 +3,20 @@ package ru.kyamshanov.mission.authentication.services
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import ru.kyamshanov.mission.authentication.GlobalConstants
 import ru.kyamshanov.mission.authentication.GlobalConstants.KEY_SHARE_TOKEN_LIFE_TIME
+import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
 import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
-import ru.kyamshanov.mission.authentication.entities.ShareEntity
 import ru.kyamshanov.mission.authentication.entities.EntityStatus
+import ru.kyamshanov.mission.authentication.entities.ShareEntity
 import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
 import ru.kyamshanov.mission.authentication.errors.TokenStatusException
 import ru.kyamshanov.mission.authentication.errors.UserNotFoundException
 import ru.kyamshanov.mission.authentication.models.JsonMap
 import ru.kyamshanov.mission.authentication.models.JwtPair
 import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
+import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.ShareEntityCrudRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
 import java.time.Instant
@@ -40,7 +43,7 @@ internal interface ShareAuthenticationService {
 
 /**
  * Реализация [RegistrationService]
- * @property sessionProcessor Обработчик JWT
+ * @property tokenProcessor Обработчик JWT
  * @property shareEntityCrudRepository CRUD репозиторий для хранения сущнстей share-auth токенов
  * @property userEntityCrudRepository CRUD репозиторий для хранения сущнстей пользователя
  * @property getCurrentInstantUseCase Получение текущей даты в формате [Instant]
@@ -48,25 +51,31 @@ internal interface ShareAuthenticationService {
  * @property expireVerificationValidator Средство проверки истечения срока действия
  */
 @Service
-internal class ShareAuthenticationServiceImpl @Autowired constructor(
-    private val sessionProcessor: SessionProcessor,
+private class ShareAuthenticationServiceImpl @Autowired constructor(
+    private val decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
     private val shareEntityCrudRepository: ShareEntityCrudRepository,
     private val userEntityCrudRepository: UserEntityCrudRepository,
     private val getCurrentInstantUseCase: GetCurrentInstantUseCase,
     @Value("\${$KEY_SHARE_TOKEN_LIFE_TIME}") private val shareTokenLifeTime: Long,
-    private val expireVerificationValidator: ExpireVerificationValidator
+    private val expireVerificationValidator: ExpireVerificationValidator,
+    private val sessionsSafeRepository: SessionsSafeRepository,
+    private val authenticationService: AuthenticationService,
+    private val sessionProcessor: SessionProcessor
 ) : ShareAuthenticationService {
 
     override suspend fun createShareAuthToken(refreshToken: String): String {
-        val shareEntity = sessionProcessor.verifyRefreshToken(refreshToken).let {
-            ShareEntity(
-                userId = it.userId,
-                sessionId = it.id,
-                createdAt = getCurrentInstantUseCase(),
-                expiresAt = getCurrentInstantUseCase().plusSeconds(shareTokenLifeTime),
-                status = EntityStatus.ACTIVE
-            )
-        }
+        val shareEntity = decodeJwtTokenUseCase.verify(refreshToken, GlobalConstants.REFRESH_TOKEN_TYPE)
+            .let { sessionsSafeRepository.findSessionByRefreshId(it.jwtId) ?: throw TokenNotFoundException() }
+            .also { if (it.status != EntityStatus.ACTIVE) throw TokenStatusException("required status ${EntityStatus.ACTIVE} but found ${it.status}") }
+            .let {
+                ShareEntity(
+                    userId = it.userId,
+                    sessionId = it.sessionId,
+                    createdAt = getCurrentInstantUseCase(),
+                    expiresAt = getCurrentInstantUseCase().plusSeconds(shareTokenLifeTime),
+                    status = EntityStatus.ACTIVE
+                )
+            }
         return shareEntityCrudRepository.save(shareEntity).id
     }
 
@@ -75,7 +84,7 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
             ?: throw TokenNotFoundException("share-auth token $shareToken not found")).also {
             if (it.status != EntityStatus.ACTIVE) throw TokenStatusException("Token`s status is not ACTIVE. Status for $shareToken is ${it.status}")
             expireVerificationValidator(it.expiresAt)
-            sessionProcessor.verifySessionById(it.sessionId)
+            sessionsSafeRepository.verifyValidationSession(it.sessionId)
         }
         val userEntity = userEntityCrudRepository.findById(shareEntity.userId)
             ?: throw UserNotFoundException("User with id = ${shareEntity.userId} not found")
@@ -87,11 +96,11 @@ internal class ShareAuthenticationServiceImpl @Autowired constructor(
             )
         }.let { JsonMap(it) }
 
-        val createdSession = sessionProcessor.createSession(
-            userId = userEntity.id, userLogin = userEntity.login, userInfo = shareAuthUserInfo
+        return sessionProcessor.createSession(
+            userId = userEntity.id,
+            userLogin = userEntity.login,
+            userInfo = shareAuthUserInfo
         )
-        shareEntityCrudRepository.save(shareEntity.copy(status = EntityStatus.INVALID))
-        return createdSession
     }
 
     companion object {

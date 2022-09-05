@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 import org.springframework.transaction.annotation.EnableTransactionManagement
 import ru.kyamshanov.mission.authentication.GlobalConstants
@@ -40,7 +41,8 @@ internal class PostgresConfiguration @Autowired constructor(
     private val username: String,
     private val jsonMapStringToMapConverter: Converter<Json, JsonMap>,
     private val mapToJsonStringConverterMap: Converter<JsonMap, Json>,
-    private val entityStatusConverter: Converter<EntityStatus, EntityStatus>
+    private val entityStatusConverter: Converter<EntityStatus, EntityStatus>,
+    private val mapToEntityConverter: Converter<EntityStatus, EntityStatus>
 ) : AbstractR2dbcConfiguration() {
 
     @Bean
@@ -69,4 +71,8 @@ internal class PostgresConfiguration @Autowired constructor(
         }.let {
             R2dbcCustomConversions(storeConversions, it)
         }
+
+    @Bean
+    fun r2dbcEntityTemplate(): R2dbcEntityTemplate = R2dbcEntityTemplate(connectionFactory())
+
 }

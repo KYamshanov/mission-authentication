@@ -1,6 +1,5 @@
 package ru.kyamshanov.mission.authentication.configuration
 
-import com.auth0.jwt.algorithms.Algorithm
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_SINGLETON
@@ -9,12 +8,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
 import org.springframework.security.crypto.password.PasswordEncoder
 import ru.kyamshanov.mission.authentication.GlobalConstants
-import ru.kyamshanov.mission.authentication.components.DecodeJwtTokenUseCase
-import ru.kyamshanov.mission.authentication.components.ExpireVerificationValidator
-import ru.kyamshanov.mission.authentication.components.GenerateJwtTokenUseCase
-import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.propcessors.*
-import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
 
 @Qualifier
@@ -52,7 +46,7 @@ internal class ProcessorsConfiguration(
     ): UserProcessor =
         UserProcessorImpl(userEntityCrudRepository, passwordEncoder)
 
-    @Bean
+  /*  @Bean
     @Scope(value = SCOPE_SINGLETON)
     fun jwtProcessor(
         algorithm: Algorithm,
@@ -63,8 +57,8 @@ internal class ProcessorsConfiguration(
         @UserVerifyNormal
         userVerifyProcessor: UserVerifyProcessor,
         expireVerificationValidator: ExpireVerificationValidator
-    ): SessionProcessor =
-        SessionProcessorImpl(
+    ): TokenProcessor =
+        TokenProcessorImpl(
             refreshTokenTimeLife = refreshTokenTimeLife,
             accessTokenTimeLife = accessTokenTimeLife,
             sessionsSafeRepository = sessionsSafeRepository,
@@ -73,7 +67,7 @@ internal class ProcessorsConfiguration(
             decodeJwtTokenUseCase = decodeJwtTokenUseCase,
             userVerifyProcessor = userVerifyProcessor,
             expireVerificationValidator = expireVerificationValidator
-        )
+        )*/
 
     @Bean
     @Scope(value = SCOPE_SINGLETON)

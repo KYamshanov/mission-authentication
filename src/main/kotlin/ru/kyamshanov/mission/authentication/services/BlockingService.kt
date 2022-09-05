@@ -2,7 +2,9 @@ package ru.kyamshanov.mission.authentication.services
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import ru.kyamshanov.mission.authentication.errors.TokenTypeException
+import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
+import ru.kyamshanov.mission.authentication.configuration.AccessTokenTimeLifeInSec
+import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
 import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 
@@ -23,18 +25,25 @@ internal interface BlockingService {
  * @property sessionProcessor Обработчик JWT
  */
 @Service
-internal class BlockingServiceImpl @Autowired constructor(
+private class BlockingServiceImpl @Autowired constructor(
     private val sessionProcessor: SessionProcessor,
-    private val sessionsSafeRepository: SessionsSafeRepository
+    private val sessionsSafeRepository: SessionsSafeRepository,
+    @AccessTokenTimeLifeInSec
+    private val accessTokenTimeLifeInSec: Long,
+    private val getCurrentInstantUseCase: GetCurrentInstantUseCase
 ) : BlockingService {
 
     override suspend fun blockSession(sessionId: String) {
-        runCatching { sessionsSafeRepository.blockingSession(sessionId) }
-            .onFailure {
-                if (it !is TokenTypeException) {
-                    sessionsSafeRepository.pausingSession(sessionId)
-                    throw it
-                }
+        runCatching {
+            sessionsSafeRepository.blockingSession(
+                sessionId,
+                getCurrentInstantUseCase().plusSeconds(accessTokenTimeLifeInSec)
+            )
+        }.onFailure {
+            if (it !is TokenNotFoundException) {
+                sessionsSafeRepository.pausingSession(sessionId)
+                throw it
             }
+        }
     }
 }

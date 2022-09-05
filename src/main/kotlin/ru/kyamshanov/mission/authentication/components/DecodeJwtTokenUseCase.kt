@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.interfaces.DecodedJWT
 import org.springframework.stereotype.Component
 import ru.kyamshanov.mission.authentication.GlobalConstants.CLAIM_TOKEN_TYPE
+import ru.kyamshanov.mission.authentication.errors.TokenTypeException
 import ru.kyamshanov.mission.authentication.models.JwtModel
 
 /**
@@ -29,8 +30,9 @@ internal class DecodeJwtTokenUseCase(
      * @param token jwt токен
      * @return декодированную модель jwt [JwtModel]
      */
-    fun verify(token: String): JwtModel =
+    fun verify(token: String, requireTokenType: String): JwtModel =
         jwtVerifier.verify(token).toJwtModel()
+            .also { if (it.type != requireTokenType) throw TokenTypeException("required token type $requireTokenType but found ${it.type}") }
 
     private fun DecodedJWT.toJwtModel() = JwtModel(
         jwtId = requireNotNull(id),

@@ -8,19 +8,18 @@ import ru.kyamshanov.mission.authentication.entities.UserEntity
  * [UserEntity] -> [User]
  */
 internal fun UserEntity.toModel(): User = User(login, MASKED_PASSWORD, id)
-
-/**
+/*
+*//**
  * Конвертировать сущность сессионного токена в модель
  * [SessionEntity] -> [SessionModel]
- */
+ *//*
 internal fun SessionEntity.toModel(): SessionModel = SessionModel(
-    id = id,
     userId = userId,
     createdAt = createdAt,
     updatedAt = updatedAt,
     expiresAt = expiresAt,
     refreshId = refreshId,
     info = sessionInfo
-)
+)*/
 
 private const val MASKED_PASSWORD = "MaSkEd"

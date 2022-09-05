@@ -10,10 +10,6 @@ import java.time.Instant
  */
 internal interface SessionTokenCrudRepository : CoroutineCrudRepository<SessionTokenEntity, String> {
 
-    /**
-     * Удалить токены с истекшим сроком действия
-     * @param since Минимальная дата истечения скрока дейтсивя
-     */
     @Query("DELETE FROM mission.public.auth_session_tokens WHERE expires_at <= :sinceExpiresAt")
     suspend fun deleteOlderTokens(sinceExpiresAt: Instant): Int
 }

@@ -23,7 +23,7 @@ internal interface RegistrationService {
  * @property userProcessor Обработчик пользователя
  */
 @Service
-internal class RegistrationServiceImpl @Autowired constructor(
+private class RegistrationServiceImpl @Autowired constructor(
     private val userProcessor: UserProcessor
 ) : RegistrationService {
 
