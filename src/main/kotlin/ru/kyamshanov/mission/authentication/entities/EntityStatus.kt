@@ -1,9 +1,9 @@
 package ru.kyamshanov.mission.authentication.entities
 
 /**
- * Перечесление статусов токена
+ * Перечесление статусов Entity
  */
-internal enum class TokenStatus {
+internal enum class EntityStatus {
 
     /**
      * Активный
@@ -14,6 +14,11 @@ internal enum class TokenStatus {
      * Остановленный
      */
     PAUSED,
+
+    /**
+     *
+     */
+    BLOCKED,
 
     /**
      * Недействительный

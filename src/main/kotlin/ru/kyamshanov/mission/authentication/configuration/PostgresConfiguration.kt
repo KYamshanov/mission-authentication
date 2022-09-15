@@ -12,15 +12,25 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 import org.springframework.transaction.annotation.EnableTransactionManagement
 import ru.kyamshanov.mission.authentication.GlobalConstants
-import ru.kyamshanov.mission.authentication.entities.TokenStatus
+import ru.kyamshanov.mission.authentication.entities.EntityStatus
 import ru.kyamshanov.mission.authentication.models.JsonMap
 
 
 /**
  * Конфигурация R2DBS, PostgresSQL
+ * @property host Хотя для доступа к БД
+ * @property port Порт для доступа к БД
+ * @property database Название БД
+ * @property schema Схема
+ * @property password Пароль для подключения к БД
+ * @property username Название пользователя в БД
+ * @property jsonMapStringToMapConverter Конвертер Json ->  JsonMap
+ * @property mapToJsonStringConverterMap Конвертер JsonMap ->  Json
+ * @property entityStatusConverter Конвертер EntityStatus -> EntityStatus для поддержки entity_status
  */
 @Configuration
 @EnableR2dbcRepositories
@@ -40,7 +50,7 @@ internal class PostgresConfiguration @Autowired constructor(
     private val username: String,
     private val jsonMapStringToMapConverter: Converter<Json, JsonMap>,
     private val mapToJsonStringConverterMap: Converter<JsonMap, Json>,
-    private val tokenStatusConverter: Converter<TokenStatus, TokenStatus>
+    private val entityStatusConverter: Converter<EntityStatus, EntityStatus>
 ) : AbstractR2dbcConfiguration() {
 
     @Bean
@@ -54,7 +64,7 @@ internal class PostgresConfiguration @Autowired constructor(
                 .password(password)
                 .schema(schema)
                 .codecRegistrar(
-                    EnumCodec.builder().withEnum("token_status", TokenStatus::class.java).build()
+                    EnumCodec.builder().withEnum("entity_status", EntityStatus::class.java).build()
                 )
                 .build()
         )
@@ -65,8 +75,11 @@ internal class PostgresConfiguration @Autowired constructor(
         mutableListOf<Any>().apply {
             add(jsonMapStringToMapConverter)
             add(mapToJsonStringConverterMap)
-            add(tokenStatusConverter)
+            add(entityStatusConverter)
         }.let {
             R2dbcCustomConversions(storeConversions, it)
         }
+
+    @Bean
+    fun r2dbcEntityTemplate(): R2dbcEntityTemplate = R2dbcEntityTemplate(connectionFactory())
 }

@@ -1,20 +1,29 @@
 package ru.kyamshanov.mission.authentication.configuration
 
-import com.auth0.jwt.algorithms.Algorithm
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_SINGLETON
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
-import org.springframework.security.crypto.password.PasswordEncoder
 import ru.kyamshanov.mission.authentication.GlobalConstants
-import ru.kyamshanov.mission.authentication.components.*
-import ru.kyamshanov.mission.authentication.propcessors.*
-import ru.kyamshanov.mission.authentication.repositories.TokenSafeRepository
-import ru.kyamshanov.mission.authentication.repositories.UserEntityCrudRepository
+
+/**
+ * Квалификатор для определения - время жизни refresh токена в секундах
+ */
+@Qualifier
+internal annotation class RefreshTokenTimeLifeInSec
+
+/**
+ * Квалификатор для определения - время жизни access токена в секундах
+ */
+@Qualifier
+internal annotation class AccessTokenTimeLifeInSec
 
 /**
  * Конфигурация обработчиков
+ * @property refreshTokenTimeLife Время жизни refresh токена в сек
+ * @property accessTokenTimeLife Время жизни access токена в сек
  */
 @Configuration
 internal class ProcessorsConfiguration(
@@ -25,42 +34,12 @@ internal class ProcessorsConfiguration(
 ) {
 
     @Bean
+    @AccessTokenTimeLifeInSec
     @Scope(value = SCOPE_SINGLETON)
-    fun userProcessor(
-        userEntityCrudRepository: UserEntityCrudRepository,
-        passwordEncoder: PasswordEncoder
-    ): UserProcessor =
-        UserProcessorImpl(userEntityCrudRepository, passwordEncoder)
+    fun bindAccessTokenTimeLife(): Long = accessTokenTimeLife
 
     @Bean
+    @RefreshTokenTimeLifeInSec
     @Scope(value = SCOPE_SINGLETON)
-    fun jwtProcessor(
-        algorithm: Algorithm,
-        tokenSafeRepository: TokenSafeRepository,
-        getCurrentDateUseCase: GetCurrentDateUseCase,
-        getCurrentLocalDateTimeUseCase: GetCurrentLocalDateTimeUseCase,
-        getCurrentInstantUseCase: GetCurrentInstantUseCase,
-        generateJwtTokenUseCase: GenerateJwtTokenUseCase,
-        decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
-        @UserVerifyNormal
-        userVerifyProcessor: UserVerifyProcessor,
-        expireVerificationValidator: ExpireVerificationValidator
-    ): JwtProcessor =
-        JwtProcessorImpl(
-            refreshTokenTimeLife = refreshTokenTimeLife,
-            accessTokenTimeLife = accessTokenTimeLife,
-            tokenSafeRepository = tokenSafeRepository,
-            getCurrentLocalDateTimeUseCase = getCurrentLocalDateTimeUseCase,
-            getCurrentInstantUseCase = getCurrentInstantUseCase,
-            generateJwtTokenUseCase = generateJwtTokenUseCase,
-            decodeJwtTokenUseCase = decodeJwtTokenUseCase,
-            userVerifyProcessor = userVerifyProcessor,
-            expireVerificationValidator = expireVerificationValidator
-        )
-
-    @Bean
-    @Scope(value = SCOPE_SINGLETON)
-    @UserVerifyNormal
-    fun userVerifyProcessorNormal(): UserVerifyProcessor =
-        UserVerifyProcessorNormal()
+    fun bindRefreshTokenTimeLife(): Long = refreshTokenTimeLife
 }

@@ -14,9 +14,7 @@ internal abstract class AbstractEntity(
 ) : Persistable<String> {
 
     @delegate:Transient
-    private val generatedId by lazy {
-        UUID.randomUUID().toString().replace("-", "")
-    }
+    private val generatedId by lazy { UUID.randomUUID().toString().replace("-", "") }
 
     /**
      * @see [Persistable.getId]
@@ -29,8 +27,14 @@ internal abstract class AbstractEntity(
      */
     override fun isNew(): Boolean = givenId == null
 
+    /**
+     * @see [Nothing.hashCode]
+     */
     override fun hashCode(): Int = givenId.hashCode()
 
+    /**
+     * @see [Nothing.equals]
+     */
     override fun equals(other: Any?): Boolean {
         return when {
             this === other -> true

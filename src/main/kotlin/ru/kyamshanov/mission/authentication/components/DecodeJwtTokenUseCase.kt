@@ -2,9 +2,11 @@ package ru.kyamshanov.mission.authentication.components
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
+import com.auth0.jwt.exceptions.TokenExpiredException
 import com.auth0.jwt.interfaces.DecodedJWT
 import org.springframework.stereotype.Component
 import ru.kyamshanov.mission.authentication.GlobalConstants.CLAIM_TOKEN_TYPE
+import ru.kyamshanov.mission.authentication.errors.TokenTypeException
 import ru.kyamshanov.mission.authentication.models.JwtModel
 
 /**
@@ -25,12 +27,19 @@ internal class DecodeJwtTokenUseCase(
         JWT.decode(token).toJwtModel()
 
     /**
-     * Декторировать с проверкой сигнатуры
+     * Декодировать с проверкой сигнатуры
+     *
      * @param token jwt токен
+     * @param requireTokenType Запрашиваемый тип токена
+     *
      * @return декодированную модель jwt [JwtModel]
+     *
+     * @throws TokenExpiredException Если истекло время жизни токена
+     * @throws TokenTypeException Если тип токена не соответствует [requireTokenType]
      */
-    fun verify(token: String): JwtModel =
+    fun verify(token: String, requireTokenType: String): JwtModel =
         jwtVerifier.verify(token).toJwtModel()
+            .also { if (it.type != requireTokenType) throw TokenTypeException("required token type $requireTokenType but found ${it.type}") }
 
     private fun DecodedJWT.toJwtModel() = JwtModel(
         jwtId = requireNotNull(id),

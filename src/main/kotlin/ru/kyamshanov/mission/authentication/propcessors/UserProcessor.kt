@@ -1,6 +1,7 @@
 package ru.kyamshanov.mission.authentication.propcessors
 
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Component
 import ru.kyamshanov.mission.authentication.entities.UserEntity
 import ru.kyamshanov.mission.authentication.errors.NoMatchPasswordException
 import ru.kyamshanov.mission.authentication.errors.UserAlreadySavedException
@@ -26,7 +27,7 @@ internal interface UserProcessor {
     /**
      * Провериь пользователя
      * @param user Модель пользователя
-     * @return true - логин [user] соответствует с сохраненным значением
+     * @return Модель [User] из БД
      *
      * @throws UserNotFoundException если пользователь не найден в БД
      * @throws IllegalArgumentException Если [User.id] - null
@@ -40,7 +41,8 @@ internal interface UserProcessor {
  * @property userEntityCrudRepository CRUD репозиторий сущностей пользователей
  * @property passwordEncoder Кодировщик паролей
  */
-internal class UserProcessorImpl(
+@Component
+private class UserProcessorImpl(
     private val userEntityCrudRepository: UserEntityCrudRepository,
     private val passwordEncoder: PasswordEncoder
 ) : UserProcessor {

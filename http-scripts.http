@@ -26,7 +26,7 @@ Content-Type: application/json
 
 {
   "accessToken": "*.*.*",
-  "checkBlock": "true"
+  "checkBlock": "false"
 }
 
 ### Проверка refresh token
@@ -36,7 +36,7 @@ Content-Type: application/json
 {
   "refreshToken": "*.*.*",
   "info": {
-    "fingerprint": "*",
+    "fingerprint": "d",
     "version": "_"
   }
 }
@@ -46,7 +46,7 @@ POST http://localhost:8081/auth/block
 Content-Type: application/json
 
 {
-  "refreshToken": "*.*.*"
+  "sessionId": "*"
 }
 
 ### Создание share_auth токена для внешней аутентификации
@@ -62,18 +62,18 @@ POST http://localhost:8081/auth/share_login
 Content-Type: application/json
 
 {
-  "authShareToken": "*",
+  "refreshToken": "*.*.*",
   "info": {
     "fingerprint": "*"
   }
 }
 
 ### Блокировка access токена
-POST http://localhost:8081/auth/block_access
+POST http://localhost:8081/auth/sessions
 Content-Type: application/json
 
 {
-  "token": "*.*.*"
+  "accessToken": "*.*.*"
 }
 
 
