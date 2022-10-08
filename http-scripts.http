@@ -76,4 +76,6 @@ Content-Type: application/json
   "accessToken": "*.*.*"
 }
 
+### Test
+GET http://localhost:8081/auth/test
 

@@ -71,3 +71,8 @@ https://docs.spring.io/spring-data/data-redis/docs/current/reference/html/#redis
 Первым делом необходимо доратать БД и установить правила на внешние включи: для таблиц auth_tokens, auth_share на
 внешние ключи <user_id,session_id> устаналиваем ON DELETE CASCADE правило, т.к. при удалении полей в основных таблицых(
 auth_user , auth_token) поля в зависмых таблицых должны удаляться
+
+Интеграция с докером 
+Для упрощения развертывания инфраструктуры mission каждый микросервис и шлюз должны запускаться через docker-compose
+файл Dockerfile и docker-compose.yml должен располагаться в корне проекта
+Для взаимодействия между контейнерами используется сеть mission-gateway_mission заданная в настройках gateway 

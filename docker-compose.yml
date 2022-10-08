@@ -1,0 +1,20 @@
+version: '1.0'
+
+services:
+  postgres:
+    image: postgres:10
+    container_name: 'mission-postgres'
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_DB: mission
+  auth:
+    build: ./
+    container_name: 'mission-auth'
+    networks:
+      - mission-gateway_mission
+    ports:
+      - 8081:8081
+networks:
+  mission-gateway_mission:
+    external: true
