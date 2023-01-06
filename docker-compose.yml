@@ -8,13 +8,26 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_USER: postgres
       POSTGRES_DB: mission
+    volumes:
+        - .:/docker-entrypoint-initdb.d
+    networks:
+      - back
+  redis:
+    image: redis:7
+    container_name: 'mission-redis'
+    networks:
+      - back
   auth:
     build: ./
     container_name: 'mission-auth'
     networks:
       - mission-gateway_mission
+      - back
     ports:
       - 8081:8081
 networks:
+  back:
+    driver: bridge
+    name: back_network
   mission-gateway_mission:
     external: true
