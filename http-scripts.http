@@ -18,7 +18,6 @@ Content-Type: application/json
     "fingerprint": "d",
     "version": "12"
   }
-
 }
 
 ### Проверка access token
