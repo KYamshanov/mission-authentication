@@ -3,17 +3,17 @@ POST http://localhost:8081/auth/reg
 Content-Type: application/json
 
 {
-  "login": "login18",
-  "password": "password4"
+  "login": "login",
+  "password": "password"
 }
 
 ### Аутентификация юзера
-POST http://localhost:8081/auth/login
+POST http://localhost:80/auth/login
 Content-Type: application/json
 
 {
-  "login": "login18",
-  "password": "password4",
+  "login": "login",
+  "password": "password",
   "info": {
     "fingerprint": "d",
     "version": "12"

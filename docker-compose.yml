@@ -8,13 +8,17 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_USER: postgres
       POSTGRES_DB: mission
+      PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
-        - .:/docker-entrypoint-initdb.d
+        - ./assets/init_db:/docker-entrypoint-initdb.d
+        - ./assets/db_data/postgres:/var/lib/postgresql/data
     networks:
       - back
   redis:
     image: redis:7
     container_name: 'mission-redis'
+    volumes:
+      - ./assets/db_data/redis:/data
     networks:
       - back
   auth:
