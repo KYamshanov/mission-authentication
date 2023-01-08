@@ -8,8 +8,11 @@ import ru.kyamshanov.mission.authentication.components.GetCurrentInstantUseCase
 import ru.kyamshanov.mission.authentication.configuration.AccessTokenTimeLifeInSec
 import ru.kyamshanov.mission.authentication.configuration.RefreshTokenTimeLifeInSec
 import ru.kyamshanov.mission.authentication.entities.*
-import ru.kyamshanov.mission.authentication.errors.*
-import ru.kyamshanov.mission.authentication.models.*
+import ru.kyamshanov.mission.authentication.errors.SessionNotFoundException
+import ru.kyamshanov.mission.authentication.errors.StatusException
+import ru.kyamshanov.mission.authentication.models.JsonMap
+import ru.kyamshanov.mission.authentication.models.JwtModel
+import ru.kyamshanov.mission.authentication.models.JwtPair
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import java.time.Instant
 import java.util.*
@@ -31,7 +34,7 @@ internal interface SessionProcessor {
 
     /**
      * Обновить сессию
-     * @param sessionId Идентификатор сессии
+     * @param refreshId Идентификатор рефреш токена
      * @param userLogin Логин пользователя
      * @param currentUserInfo Информация о пользователе
      *
@@ -89,7 +92,8 @@ private class SessionProcessorImpl(
         val sessionTokenWithSessionEntity =
             (sessionsSafeRepository.findSessionByRefreshId(refreshId) ?: throw SessionNotFoundException())
                 .also {
-                    if (it.sessionStatus != EntityStatus.ACTIVE) throw StatusException("required status ${EntityStatus.ACTIVE} but found ${it.sessionStatus}")
+                    if (it.sessionStatus != EntityStatus.ACTIVE || it.tokenStatus != EntityStatus.ACTIVE)
+                        throw StatusException("required status ${EntityStatus.ACTIVE} but found ${it.sessionStatus}")
                     expireVerificationValidator(it.expiresAt)
                 }
 
@@ -97,8 +101,12 @@ private class SessionProcessorImpl(
         val newRefreshToken = sessionTokenWithSessionEntity.toSessionTokenEntity()
             .run {
                 val now = getCurrentInstantUseCase()
+                val same = this.userInfo same currentUserInfo
+
+                if (same.not()) sessionsSafeRepository.saveSessionToken(copy(status = EntityStatus.BLOCKED))
+
                 copy(
-                    givenId = if (this.userInfo != currentUserInfo) null else id,
+                    givenId = if (same) id else null,
                     updatedAt = now,
                     refreshId = generateRefreshId(),
                     expiresAt = now.plusSeconds(refreshTokenTimeLifeInSec),
@@ -150,4 +158,5 @@ private class SessionProcessorImpl(
 
     private fun generateRefreshId(): String = UUID.randomUUID().toString()
 
+    private infix fun JsonMap.same(info: JsonMap) = this == info
 }
