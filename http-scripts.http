@@ -8,7 +8,7 @@ Content-Type: application/json
 }
 
 ### Аутентификация юзера
-POST http://localhost:80/auth/login
+POST http://localhost:8081/auth/login
 Content-Type: application/json
 
 {
@@ -41,12 +41,20 @@ Content-Type: application/json
   }
 }
 
-### Блокировка сесии по рефреш токену
+### Блокировка сесии по сессии
 POST http://localhost:8081/auth/block
 Content-Type: application/json
 
 {
   "sessionId": "*"
+}
+
+### Блокировка сесии по рефреш токену
+POST http://localhost:8081/auth/block_refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "*.*.*"
 }
 
 ### Создание share_auth токена для внешней аутентификации

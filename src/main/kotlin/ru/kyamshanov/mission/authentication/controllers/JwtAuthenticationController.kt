@@ -141,6 +141,24 @@ internal class JwtAuthenticationController @Autowired constructor(
         }
 
     /**
+     * End-point (POST) : /block_refresh
+     * Блокировка сессии по рефреш токену
+     * @param body Тело запроса
+     * @return [ResponseEntity] Статус обработки
+     */
+    @PostMapping("block_refresh")
+    suspend fun blockRefresh(
+        @RequestBody(required = true) body: BlockRefreshRqDto
+    ): ResponseEntity<Unit> =
+        try {
+            blockingService.revokeRefreshToken(body.refreshToken)
+            ResponseEntity(HttpStatus.OK)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+
+    /**
      * End-point (POST) : /share
      * Создание токена для внешней авторизации
      * @param body Тело запроса
