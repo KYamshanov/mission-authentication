@@ -1,5 +1,7 @@
 package ru.kyamshanov.mission.authentication.configuration
 
+import io.r2dbc.pool.ConnectionPool
+import io.r2dbc.pool.ConnectionPoolConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.postgresql.codec.EnumCodec
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement
 import ru.kyamshanov.mission.authentication.GlobalConstants
 import ru.kyamshanov.mission.authentication.entities.EntityStatus
 import ru.kyamshanov.mission.authentication.models.JsonMap
+import java.time.Duration
 
 
 /**
@@ -67,7 +70,13 @@ internal class PostgresConfiguration @Autowired constructor(
                     EnumCodec.builder().withEnum("entity_status", EntityStatus::class.java).build()
                 )
                 .build()
-        )
+        ).let {
+            ConnectionPoolConfiguration.builder(it)
+                .initialSize(5)
+                .maxSize(10)
+                .maxIdleTime(Duration.ofMinutes(5))
+                .build()
+        }.let { ConnectionPool(it) }
     }
 
     @Bean
