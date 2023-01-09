@@ -87,3 +87,10 @@ Content-Type: application/json
 ### Test
 GET http://localhost:8081/auth/test
 
+### Получить идентификатор пользователя
+POST http://localhost:8081/auth/get_id
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsb2dpbiIsInR0eXBlIjoicmVmcmVzaCIsImV4cCI6MTY3Mzg3MTQzNSwianRpIjoiMzU4NTQ5ZjMtMWE3Mi00ZTJkLWJmMDItMDQ5OTI1ZWZiZGNlIn0.HJtAxvoyzxQxt85ZZDpWlgbo05I16MvKpileLOtw6Lk"
+}

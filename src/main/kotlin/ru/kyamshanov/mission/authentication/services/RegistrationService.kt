@@ -21,12 +21,14 @@ internal interface RegistrationService {
 /**
  * Реализация [RegistrationService]
  * @property userProcessor Обработчик пользователя
+ * @property generationService Сервис генерации идентификаторов
  */
 @Service
 private class RegistrationServiceImpl @Autowired constructor(
-    private val userProcessor: UserProcessor
+    private val userProcessor: UserProcessor,
+    private val generationService: IdGenerationService
 ) : RegistrationService {
 
     override suspend fun registration(user: User): User =
-        userProcessor.saveUser(user)
+        userProcessor.saveUser(user.copy(externalId = generationService.generate()))
 }

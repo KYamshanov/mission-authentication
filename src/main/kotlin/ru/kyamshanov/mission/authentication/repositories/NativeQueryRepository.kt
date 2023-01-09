@@ -6,6 +6,7 @@ import org.springframework.data.r2dbc.convert.MappingR2dbcConverter
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.stereotype.Repository
 import ru.kyamshanov.mission.authentication.entities.SessionTokenWithSessionEntity
+import ru.kyamshanov.mission.authentication.entities.UserEntity
 
 /**
  * Репозиторий используеющий нативные запросы к БД
@@ -28,5 +29,15 @@ internal class NativeQueryRepository @Autowired constructor(
             .map { t, u ->
                 converter.read(SessionTokenWithSessionEntity::class.java, t, u)
             }
+            .first().awaitSingleOrNull()
+
+    /**
+     * Найти пользователя по refreshId
+     * @param refreshId Рефреш токен
+     * @return [UserEntity]
+     */
+    suspend fun findUserByRefreshId(refreshId: String): UserEntity? =
+        r2dbcEntityTemplate.databaseClient.sql("SELECT users.id as id, users.login as login, users.password as password, users.external_id as external_id FROM auth_session_tokens tokens LEFT JOIN auth_sessions AS sessions ON sessions.id = tokens.session_id LEFT JOIN auth_users AS users ON sessions.user_id = users.id WHERE refresh_id = '$refreshId' LIMIT 1")
+            .map { t, u -> converter.read(UserEntity::class.java, t, u) }
             .first().awaitSingleOrNull()
 }

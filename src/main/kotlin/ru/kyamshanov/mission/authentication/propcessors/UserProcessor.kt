@@ -52,7 +52,11 @@ private class UserProcessorImpl(
      */
     override suspend fun saveUser(user: User): User {
         if (userEntityCrudRepository.existsByLogin(user.login)) throw UserAlreadySavedException("User ${user.login} already saved")
-        val entity = UserEntity(user.login, passwordEncoder.encode(user.password))
+        val entity = UserEntity(
+            login = user.login,
+            password = passwordEncoder.encode(user.password),
+            externalId = requireNotNull(user.externalId)
+        )
         return userEntityCrudRepository.save(entity).toModel()
     }
 

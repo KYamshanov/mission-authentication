@@ -16,9 +16,10 @@ CREATE TYPE entity_status AS ENUM ('ACTIVE', 'PAUSED', 'BLOCKED', 'INVALID');
 
 CREATE TABLE auth_users
 (
-    id       VARCHAR(50) PRIMARY KEY,
-    login    VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255)       NOT NULL
+    id          VARCHAR(50) PRIMARY KEY,
+    login       VARCHAR(50) UNIQUE NOT NULL,
+    password    VARCHAR(255)       NOT NULL,
+    external_id VARCHAR(50) UNIQUE NOT NULL
 );
 
 CREATE TABLE auth_sessions
