@@ -1,5 +1,7 @@
 package ru.kyamshanov.mission.authentication.dto
 
+import ru.kyamshanov.mission.authentication.models.UserRole
+
 /**
  * Dto-model Тело запроса на проверку активности токена
  * @property accessToken Токен доступности
@@ -13,9 +15,11 @@ data class CheckAccessRqDto(
 /**
  * Dto-model Тело ответа на проверку активности токена
  * @property status Статус доступности токена
+ * @property roles Роли пользователя
  */
 data class CheckAccessRsDto(
-    val status: AccessStatus
+    val status: AccessStatus,
+    val roles: List<UserRole>?
 ) {
 
     /**

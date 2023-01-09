@@ -34,6 +34,13 @@ internal interface UserProcessor {
      * @throws NoMatchPasswordException Если пароль не соответствует с сохраненным
      */
     suspend fun verify(user: User): User
+
+    /**
+     * Получить пользователя из externalId
+     * @param externalId Внешний идентификатор пользователя
+     * @return [User]
+     */
+    suspend fun getUserById(externalId: String): User
 }
 
 /**
@@ -70,4 +77,8 @@ private class UserProcessorImpl(
             throw NoMatchPasswordException()
         return foundUser.toModel()
     }
+
+    override suspend fun getUserById(externalId: String): User =
+        userEntityCrudRepository.findByExternalId(externalId)?.toModel()
+            ?: throw UserNotFoundException("User with externalId $externalId not found in auth-users database")
 }

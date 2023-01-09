@@ -5,7 +5,7 @@
 DROP TABLE IF EXISTS auth_session_tokens;
 DROP TABLE IF EXISTS auth_share;
 DROP TABLE IF EXISTS auth_sessions;
-DROP TABLE IF EXISTS auth_users;
+DROP TABLE IF EXISTS auth_users CASCADE;
 
 DROP TYPE IF EXISTS entity_status;
 
@@ -62,3 +62,29 @@ CREATE TABLE auth_share
 
 CREATE INDEX auth_session_tokens_refresh_id ON auth_session_tokens (refresh_id);
 CREATE INDEX auth_sessions_user_id ON auth_sessions (user_id);
+
+/*--- Роли пользователя ---*/
+
+DROP TABLE IF EXISTS user_role;
+DROP TABLE IF EXISTS roles;
+
+CREATE TABLE roles
+(
+    id        SERIAL PRIMARY KEY,
+    role_name VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE user_role
+(
+    id      SERIAL PRIMARY KEY,
+    user_id VARCHAR(50),
+    role_id INTEGER,
+
+    FOREIGN KEY (user_id) REFERENCES auth_users (id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE
+);
+
+
+INSERT INTO roles (role_name)
+VALUES ('ADMIN'),
+       ('MANAGER');

@@ -13,6 +13,7 @@ import ru.kyamshanov.mission.authentication.errors.StatusException
 import ru.kyamshanov.mission.authentication.models.JsonMap
 import ru.kyamshanov.mission.authentication.models.JwtModel
 import ru.kyamshanov.mission.authentication.models.JwtPair
+import ru.kyamshanov.mission.authentication.models.UserRole
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import java.time.Instant
 import java.util.*
@@ -26,16 +27,18 @@ internal interface SessionProcessor {
      * Создать сессию
      * @param userId Идентификатор пользователя
      * @param userLogin Логин пользователя
+     * @param userRoles Роли пользоваетля
      * @param userInfo Информация о пользователе
      *
      * @return [JwtPair] Пара Jwt токенов access/refresh
      */
-    suspend fun createSession(userId: String, userLogin: String, userInfo: JsonMap): JwtPair
+    suspend fun createSession(userId: String, userLogin: String, userRoles: List<UserRole>, userInfo: JsonMap): JwtPair
 
     /**
      * Обновить сессию
      * @param refreshId Идентификатор рефреш токена
      * @param userLogin Логин пользователя
+     * @param userRoles Роли пользоваетеля
      * @param currentUserInfo Информация о пользователе
      *
      * @return [JwtPair] Пара Jwt токенов access/refresh
@@ -43,7 +46,12 @@ internal interface SessionProcessor {
      * @throws SessionNotFoundException Если сессия не найдена
      * @throws StatusException Если у сессии статус не  ACTIVE
      */
-    suspend fun refreshSession(refreshId: String, userLogin: String, currentUserInfo: JsonMap): JwtPair
+    suspend fun refreshSession(
+        refreshId: String,
+        userLogin: String,
+        userRoles: List<UserRole>,
+        currentUserInfo: JsonMap
+    ): JwtPair
 }
 
 /**
@@ -72,13 +80,18 @@ private class SessionProcessorImpl(
     /**
      * @see [SessionProcessor.createSession]
      */
-    override suspend fun createSession(userId: String, userLogin: String, userInfo: JsonMap): JwtPair {
+    override suspend fun createSession(
+        userId: String,
+        userLogin: String,
+        userRoles: List<UserRole>,
+        userInfo: JsonMap
+    ): JwtPair {
         val sessionEntity = createSessionEntity(userId)
         val sessionTokenEntity = sessionEntity.toTokenEntity(userInfo)
-        val accessToken = sessionEntity.toAccessToken(userLogin)
-        val refreshToken = sessionTokenEntity.toRefreshToken(userLogin)
+        val accessJwt = sessionEntity.toAccessJwt(userLogin, userRoles)
+        val refreshJwt = sessionTokenEntity.toRefreshJwt(userLogin, userRoles)
         sessionsSafeRepository.saveNewSession(sessionEntity, sessionTokenEntity)
-        return JwtPair(accessToken, refreshToken)
+        return JwtPair(accessJwt, refreshJwt)
     }
 
     /**
@@ -87,6 +100,7 @@ private class SessionProcessorImpl(
     override suspend fun refreshSession(
         refreshId: String,
         userLogin: String,
+        userRoles: List<UserRole>,
         currentUserInfo: JsonMap
     ): JwtPair {
         val sessionTokenWithSessionEntity =
@@ -97,8 +111,8 @@ private class SessionProcessorImpl(
                     expireVerificationValidator(it.expiresAt)
                 }
 
-        val newAccessToken = sessionTokenWithSessionEntity.toSessionEntity().toAccessToken(userLogin)
-        val newRefreshToken = sessionTokenWithSessionEntity.toSessionTokenEntity()
+        val newAccessJwt = sessionTokenWithSessionEntity.toSessionEntity().toAccessJwt(userLogin, userRoles)
+        val newRefreshJwt = sessionTokenWithSessionEntity.toSessionTokenEntity()
             .run {
                 val now = getCurrentInstantUseCase()
                 val same = this.userInfo same currentUserInfo
@@ -112,8 +126,8 @@ private class SessionProcessorImpl(
                     expiresAt = now.plusSeconds(refreshTokenTimeLifeInSec),
                     userInfo = currentUserInfo
                 )
-            }.also { sessionsSafeRepository.saveSessionToken(it) }.toRefreshToken(userLogin)
-        return JwtPair(newAccessToken, newRefreshToken)
+            }.also { sessionsSafeRepository.saveSessionToken(it) }.toRefreshJwt(userLogin, userRoles)
+        return JwtPair(newAccessJwt, newRefreshJwt)
     }
 
     private fun createSessionEntity(userId: String): SessionEntity {
@@ -139,21 +153,23 @@ private class SessionProcessorImpl(
         )
     }
 
-    private fun SessionTokenEntity.toRefreshToken(login: String): String = JwtModel(
+    private fun SessionTokenEntity.toRefreshJwt(login: String, userRoles: List<UserRole>): JwtModel = JwtModel(
         jwtId = refreshId,
         type = GlobalConstants.REFRESH_TOKEN_TYPE,
         expiresAt = expiresAt,
-        subject = login
-    ).let { generateJwtTokenUseCase.invoke(it) }
+        subject = login,
+        roles = userRoles
+    )
 
-    private fun SessionEntity.toAccessToken(login: String): String {
+    private fun SessionEntity.toAccessJwt(login: String, userRoles: List<UserRole>): JwtModel {
         val now = getCurrentInstantUseCase()
         return JwtModel(
             jwtId = id,
             type = GlobalConstants.ACCESS_TOKEN_TYPE,
             expiresAt = now.plusSeconds(accessTokenTimeLifeInSec),
-            subject = login
-        ).let { generateJwtTokenUseCase(it) }
+            subject = login,
+            roles = userRoles
+        )
     }
 
     private fun generateRefreshId(): String = UUID.randomUUID().toString()

@@ -14,7 +14,6 @@ import ru.kyamshanov.mission.authentication.models.User
 import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
 import ru.kyamshanov.mission.authentication.propcessors.UserProcessor
 import ru.kyamshanov.mission.authentication.propcessors.UserVerifyProcessor
-import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 
 /**
  * Сервис аутентификации
@@ -54,6 +53,7 @@ internal interface AuthenticationService {
  * @property decodeJwtTokenUseCase UseCase для декодировки jwt токена
  * @property expireVerificationValidator Средство проверки истечения срока действия
  * @property sessionProcessor Обработчик сессии
+ * @property roleService Сервис обработки ролей
  */
 @Service
 private class AuthenticationServiceImpl @Autowired constructor(
@@ -61,10 +61,10 @@ private class AuthenticationServiceImpl @Autowired constructor(
     private val getCurrentInstantUseCase: GetCurrentInstantUseCase,
     private val userVerifyProcessor: UserVerifyProcessor,
     private val generateJwtTokenUseCase: GenerateJwtTokenUseCase,
-    private val safeSessionsSafeRepository: SessionsSafeRepository,
     private val decodeJwtTokenUseCase: DecodeJwtTokenUseCase,
     private val expireVerificationValidator: ExpireVerificationValidator,
-    private val sessionProcessor: SessionProcessor
+    private val sessionProcessor: SessionProcessor,
+    private val roleService: RoleService
 ) : AuthenticationService {
 
     override suspend fun login(userSketch: User, userInfo: JsonMap): JwtPair {
@@ -73,13 +73,19 @@ private class AuthenticationServiceImpl @Autowired constructor(
         return sessionProcessor.createSession(
             userId = requireNotNull(user.id),
             userLogin = user.login,
-            userInfo = userInfo
+            userInfo = userInfo,
+            userRoles = roleService.getUserRoles(user)
         )
     }
 
     override suspend fun refreshSession(refreshToken: String, userInfo: JsonMap): JwtPair {
         if (!userVerifyProcessor.checkInfo(userInfo)) throw UserVerifyException()
         val jwtModel = decodeJwtTokenUseCase.verify(refreshToken, REFRESH_TOKEN_TYPE)
-        return sessionProcessor.refreshSession(jwtModel.jwtId, jwtModel.subject.orEmpty(), userInfo)
+        return sessionProcessor.refreshSession(
+            refreshId = jwtModel.jwtId,
+            userLogin = jwtModel.subject.orEmpty(),
+            userRoles = jwtModel.roles,
+            currentUserInfo = userInfo
+        )
     }
 }

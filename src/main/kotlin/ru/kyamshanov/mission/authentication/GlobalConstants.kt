@@ -21,6 +21,11 @@ object GlobalConstants {
     const val CLAIM_TOKEN_TYPE = "ttype"
 
     /**
+     * Claim для хранения ролей
+     */
+    const val CLAIM_ROLES = "roles"
+
+    /**
      * Источник сертификатов приложения
      */
     const val CERTIFICATES_PROPERTY_SOURCE = "classpath:certificates.properties"

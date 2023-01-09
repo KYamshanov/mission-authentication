@@ -3,6 +3,7 @@ package ru.kyamshanov.mission.authentication.components
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.springframework.stereotype.Component
+import ru.kyamshanov.mission.authentication.GlobalConstants.CLAIM_ROLES
 import ru.kyamshanov.mission.authentication.GlobalConstants.CLAIM_TOKEN_TYPE
 import ru.kyamshanov.mission.authentication.models.JwtModel
 
@@ -26,5 +27,6 @@ internal class GenerateJwtTokenUseCase(
             .withSubject(jwtModel.subject)
             .withExpiresAt(jwtModel.expiresAt)
             .withClaim(CLAIM_TOKEN_TYPE, jwtModel.type)
+            .withClaim(CLAIM_ROLES, jwtModel.roles.map { it.name })
             .sign(algorithm)
 }

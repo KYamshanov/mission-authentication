@@ -6,6 +6,6 @@ package ru.kyamshanov.mission.authentication.dto
  * @property refreshToken Токен обновления
  */
 data class TokensRsDto(
-    val accessToken: String,
+    val accessToken: AccessTokenDto,
     val refreshToken: String
 )
