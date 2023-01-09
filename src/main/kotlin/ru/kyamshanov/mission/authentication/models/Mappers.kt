@@ -6,6 +6,11 @@ import ru.kyamshanov.mission.authentication.entities.UserEntity
  * Конвертировать сущность пользователя таблицы в модель
  * [UserEntity] -> [User]
  */
-internal fun UserEntity.toModel(): User = User(login, MASKED_PASSWORD, id)
+internal fun UserEntity.toModel(): User = User(
+    login = login,
+    password = MASKED_PASSWORD,
+    id = id,
+    externalId = externalId
+)
 
 private const val MASKED_PASSWORD = "MaSkEd"

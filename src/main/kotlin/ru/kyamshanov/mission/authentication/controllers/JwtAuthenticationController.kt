@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import ru.kyamshanov.mission.authentication.components.UserFactory
 import ru.kyamshanov.mission.authentication.dto.*
 import ru.kyamshanov.mission.authentication.errors.SessionBlockedException
 import ru.kyamshanov.mission.authentication.errors.TokenExpireException
 import ru.kyamshanov.mission.authentication.errors.UserInfoRequiredException
 import ru.kyamshanov.mission.authentication.models.JsonMap
+import ru.kyamshanov.mission.authentication.models.User
 import ru.kyamshanov.mission.authentication.services.*
 
 /**
@@ -24,7 +24,7 @@ import ru.kyamshanov.mission.authentication.services.*
  * @property shareAuthenticationService Сервис для внешней аутентификации по токену
  * @property verifyService Сервис проверки
  * @property sessionService Сессионный сервис
- * @property userFactory Фабрика пользователя
+ * @property identifyService Сервис идентификации пользователя
  */
 @RestController
 @RequestMapping("/auth")
@@ -35,7 +35,7 @@ internal class JwtAuthenticationController @Autowired constructor(
     private val shareAuthenticationService: ShareAuthenticationService,
     private val verifyService: VerifyService,
     private val sessionService: SessionService,
-    private val userFactory: UserFactory
+    private val identifyService: IdentifyService
 ) {
 
     /**
@@ -49,7 +49,7 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = false) body: UserDto
     ): ResponseEntity<Unit> =
         try {
-            val user = userFactory.createUser(body.login, body.password)
+            val user = User(body.login, body.password)
             registrationService.registration(user)
             ResponseEntity(HttpStatus.OK)
         } catch (e: Throwable) {
@@ -69,7 +69,7 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: UserDto
     ): ResponseEntity<TokensRsDto> =
         try {
-            val user = userFactory.createUser(body.login, body.password)
+            val user = User(body.login, body.password)
             val userInfo = body.info ?: throw UserInfoRequiredException()
             authenticationService.login(user, JsonMap(userInfo)).let {
                 TokensRsDto(it.accessToken, it.refreshToken)
@@ -208,6 +208,25 @@ internal class JwtAuthenticationController @Autowired constructor(
         try {
             val sessions = sessionService.getAllSessionsByAccessToken(body.accessToken)
             ResponseEntity(GetAllSessionsRsDto(sessions), HttpStatus.OK)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+
+    /**
+     * End-point (POST) : /refresh
+     * Обновить токены с проверкой актуальности рефреш токена
+     * @param body Тело запроса
+     * @return [ResponseEntity] С парой новых токенов
+     */
+    @PostMapping("get_id")
+    suspend fun getId(
+        @RequestBody(required = true) body: GetUserIdRqDto
+    ): ResponseEntity<GetUserIdRsDto> =
+        try {
+            val response =
+                GetUserIdRsDto(requireNotNull(identifyService.getUserByRefreshToken(body.refreshToken).externalId))
+            ResponseEntity(response, HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
