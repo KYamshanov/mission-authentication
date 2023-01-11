@@ -15,5 +15,5 @@ internal interface SessionTokenCrudRepository : CoroutineCrudRepository<SessionT
      * @param sinceExpiresAt С какого момента истечения удалять сессионные токены
      */
     @Query("DELETE FROM mission.public.auth_session_tokens WHERE expires_at <= :sinceExpiresAt")
-    suspend fun deleteOlderTokens(sinceExpiresAt: Instant): Int
+    suspend fun deleteOlderTokens(sinceExpiresAt: Instant): Int?
 }

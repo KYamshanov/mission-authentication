@@ -14,6 +14,7 @@ import ru.kyamshanov.mission.authentication.errors.TokenNotFoundException
 import ru.kyamshanov.mission.authentication.errors.UserNotFoundException
 import ru.kyamshanov.mission.authentication.models.JsonMap
 import ru.kyamshanov.mission.authentication.models.JwtPair
+import ru.kyamshanov.mission.authentication.models.toModel
 import ru.kyamshanov.mission.authentication.propcessors.SessionProcessor
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 import ru.kyamshanov.mission.authentication.repositories.ShareEntityCrudRepository
@@ -51,6 +52,7 @@ internal interface ShareAuthenticationService {
  * @property sessionsSafeRepository Безопасный репозиторий для взаимодействия с сессиями
  * @property shareTokenLifeTime Время жизни auth-share токена в сек.
  * @property expireVerificationValidator Средство проверки истечения срока действия
+ * @property rolesService Сервис ролей
  */
 @Service
 private class ShareAuthenticationServiceImpl @Autowired constructor(
@@ -62,6 +64,7 @@ private class ShareAuthenticationServiceImpl @Autowired constructor(
     private val expireVerificationValidator: ExpireVerificationValidator,
     private val sessionsSafeRepository: SessionsSafeRepository,
     private val sessionProcessor: SessionProcessor,
+    private val rolesService: RoleService
 ) : ShareAuthenticationService {
 
     override suspend fun createShareAuthToken(sessionId: String): String {
@@ -96,10 +99,13 @@ private class ShareAuthenticationServiceImpl @Autowired constructor(
             )
         }.let { JsonMap(it) }
 
+        val roles = rolesService.getUserRoles(userEntity.toModel())
+
         return sessionProcessor.createSession(
             userId = userEntity.id,
             userLogin = userEntity.login,
-            userInfo = shareAuthUserInfo
+            userInfo = shareAuthUserInfo,
+            userRoles = roles
         )
     }
 

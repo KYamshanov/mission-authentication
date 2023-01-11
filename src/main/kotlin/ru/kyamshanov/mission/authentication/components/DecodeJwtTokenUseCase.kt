@@ -5,9 +5,11 @@ import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.exceptions.TokenExpiredException
 import com.auth0.jwt.interfaces.DecodedJWT
 import org.springframework.stereotype.Component
+import ru.kyamshanov.mission.authentication.GlobalConstants.CLAIM_ROLES
 import ru.kyamshanov.mission.authentication.GlobalConstants.CLAIM_TOKEN_TYPE
 import ru.kyamshanov.mission.authentication.errors.TokenTypeException
 import ru.kyamshanov.mission.authentication.models.JwtModel
+import ru.kyamshanov.mission.authentication.models.UserRole
 
 /**
  * UseCase для декодировки jwt токена
@@ -45,6 +47,7 @@ internal class DecodeJwtTokenUseCase(
         jwtId = requireNotNull(id),
         expiresAt = expiresAtAsInstant,
         subject = subject,
-        type = requireNotNull(getClaim(CLAIM_TOKEN_TYPE).asString())
+        type = requireNotNull(getClaim(CLAIM_TOKEN_TYPE).asString()),
+        roles = getClaim(CLAIM_ROLES).asList(String::class.java).map { UserRole.valueOf(it) }
     )
 }

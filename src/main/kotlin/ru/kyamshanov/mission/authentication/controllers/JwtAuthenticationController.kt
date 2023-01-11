@@ -8,11 +8,13 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import ru.kyamshanov.mission.authentication.components.GenerateJwtTokenUseCase
 import ru.kyamshanov.mission.authentication.dto.*
 import ru.kyamshanov.mission.authentication.errors.SessionBlockedException
 import ru.kyamshanov.mission.authentication.errors.TokenExpireException
 import ru.kyamshanov.mission.authentication.errors.UserInfoRequiredException
 import ru.kyamshanov.mission.authentication.models.JsonMap
+import ru.kyamshanov.mission.authentication.models.JwtPair
 import ru.kyamshanov.mission.authentication.models.User
 import ru.kyamshanov.mission.authentication.services.*
 
@@ -25,6 +27,7 @@ import ru.kyamshanov.mission.authentication.services.*
  * @property verifyService Сервис проверки
  * @property sessionService Сессионный сервис
  * @property identifyService Сервис идентификации пользователя
+ * @property generateJwtTokenUseCase UseCase для получения токена из Jwt
  */
 @RestController
 @RequestMapping("/auth")
@@ -35,7 +38,8 @@ internal class JwtAuthenticationController @Autowired constructor(
     private val shareAuthenticationService: ShareAuthenticationService,
     private val verifyService: VerifyService,
     private val sessionService: SessionService,
-    private val identifyService: IdentifyService
+    private val identifyService: IdentifyService,
+    private val generateJwtTokenUseCase: GenerateJwtTokenUseCase
 ) {
 
     /**
@@ -71,9 +75,8 @@ internal class JwtAuthenticationController @Autowired constructor(
         try {
             val user = User(body.login, body.password)
             val userInfo = body.info ?: throw UserInfoRequiredException()
-            authenticationService.login(user, JsonMap(userInfo)).let {
-                TokensRsDto(it.accessToken, it.refreshToken)
-            }.let { ResponseEntity(it, HttpStatus.OK) }
+            authenticationService.login(user, JsonMap(userInfo)).toTokenRs()
+                .let { ResponseEntity(it, HttpStatus.OK) }
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -90,14 +93,14 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: CheckAccessRqDto
     ): ResponseEntity<CheckAccessRsDto> =
         try {
-            verifyService.verifyAccessToken(body.accessToken, body.checkBlock)
-            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.ACTIVE), HttpStatus.OK)
+            val jwtModel = verifyService.verifyAccessToken(body.accessToken, body.checkBlock)
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.ACTIVE, jwtModel.roles), HttpStatus.OK)
         } catch (e: TokenExpiredException) {
-            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.EXPIRED), HttpStatus.OK)
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.EXPIRED, null), HttpStatus.OK)
         } catch (e: TokenExpireException) {
-            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.EXPIRED), HttpStatus.OK)
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.EXPIRED, null), HttpStatus.OK)
         } catch (e: SessionBlockedException) {
-            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.BLOCKED), HttpStatus.OK)
+            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.BLOCKED, null), HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -114,8 +117,7 @@ internal class JwtAuthenticationController @Autowired constructor(
         @RequestBody(required = true) body: RefreshRqDto
     ): ResponseEntity<TokensRsDto> =
         try {
-            authenticationService.refreshSession(body.refreshToken, JsonMap(body.info))
-                .let { TokensRsDto(it.accessToken, it.refreshToken) }
+            authenticationService.refreshSession(body.refreshToken, JsonMap(body.info)).toTokenRs()
                 .let { ResponseEntity(it, HttpStatus.OK) }
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -189,7 +191,7 @@ internal class JwtAuthenticationController @Autowired constructor(
     ): ResponseEntity<TokensRsDto> =
         try {
             val jwtPair = shareAuthenticationService.login(body.authShareToken, JsonMap(body.info))
-            ResponseEntity(TokensRsDto(jwtPair.accessToken, jwtPair.refreshToken), HttpStatus.OK)
+            ResponseEntity(jwtPair.toTokenRs(), HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -231,4 +233,12 @@ internal class JwtAuthenticationController @Autowired constructor(
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
+
+    private fun JwtPair.toTokenRs(): TokensRsDto {
+        val accessToken = generateJwtTokenUseCase(accessJwt)
+        val refreshJwt = generateJwtTokenUseCase(refreshJwt)
+        val roles = requireNotNull(accessJwt.roles) { "User roles needed for access token" }
+
+        return TokensRsDto(AccessTokenDto(accessToken, roles), refreshJwt)
+    }
 }

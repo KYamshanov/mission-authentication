@@ -20,4 +20,11 @@ internal interface UserEntityCrudRepository : CoroutineCrudRepository<UserEntity
      * @return Если пользователя существует - [UserEntity], инче - null
      */
     suspend fun findByLogin(login: String): UserEntity?
+
+    /**
+     * Найти пользователя по внешнему Id
+     * @param externalId Внешний идентификатор пользователя
+     * @return [UserEntity]
+     */
+    suspend fun findByExternalId(externalId: String): UserEntity?
 }
