@@ -94,7 +94,12 @@ internal class JwtAuthenticationController @Autowired constructor(
     ): ResponseEntity<CheckAccessRsDto> =
         try {
             val jwtModel = verifyService.verifyAccessToken(body.accessToken, body.checkBlock)
-            ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.ACTIVE, jwtModel.roles), HttpStatus.OK)
+            ResponseEntity(
+                CheckAccessRsDto(
+                    CheckAccessRsDto.AccessStatus.ACTIVE,
+                    AccessDataDto(jwtModel.roles, jwtModel.externalUserId)
+                ), HttpStatus.OK
+            )
         } catch (e: TokenExpiredException) {
             ResponseEntity(CheckAccessRsDto(CheckAccessRsDto.AccessStatus.EXPIRED, null), HttpStatus.OK)
         } catch (e: TokenExpireException) {
@@ -239,6 +244,6 @@ internal class JwtAuthenticationController @Autowired constructor(
         val refreshJwt = generateJwtTokenUseCase(refreshJwt)
         val roles = requireNotNull(accessJwt.roles) { "User roles needed for access token" }
 
-        return TokensRsDto(AccessTokenDto(accessToken, roles), refreshJwt)
+        return TokensRsDto(AccessTokenDto(accessToken, AccessDataDto(roles, accessJwt.externalUserId)), refreshJwt)
     }
 }

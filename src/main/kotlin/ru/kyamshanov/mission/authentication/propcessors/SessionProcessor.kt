@@ -26,18 +26,18 @@ internal interface SessionProcessor {
     /**
      * Создать сессию
      * @param userId Идентификатор пользователя
-     * @param userLogin Логин пользователя
+     * @param externalUserId Внешний ID пользователя
      * @param userRoles Роли пользоваетля
      * @param userInfo Информация о пользователе
      *
      * @return [JwtPair] Пара Jwt токенов access/refresh
      */
-    suspend fun createSession(userId: String, userLogin: String, userRoles: List<UserRole>, userInfo: JsonMap): JwtPair
+    suspend fun createSession(userId: String, externalUserId: String, userRoles: List<UserRole>, userInfo: JsonMap): JwtPair
 
     /**
      * Обновить сессию
      * @param refreshId Идентификатор рефреш токена
-     * @param userLogin Логин пользователя
+     * @param externalUserId Внешний ID пользователя
      * @param userRoles Роли пользоваетеля
      * @param currentUserInfo Информация о пользователе
      *
@@ -48,7 +48,7 @@ internal interface SessionProcessor {
      */
     suspend fun refreshSession(
         refreshId: String,
-        userLogin: String,
+        externalUserId: String,
         userRoles: List<UserRole>,
         currentUserInfo: JsonMap
     ): JwtPair
@@ -82,14 +82,14 @@ private class SessionProcessorImpl(
      */
     override suspend fun createSession(
         userId: String,
-        userLogin: String,
+        externalUserId: String,
         userRoles: List<UserRole>,
         userInfo: JsonMap
     ): JwtPair {
         val sessionEntity = createSessionEntity(userId)
         val sessionTokenEntity = sessionEntity.toTokenEntity(userInfo)
-        val accessJwt = sessionEntity.toAccessJwt(userLogin, userRoles)
-        val refreshJwt = sessionTokenEntity.toRefreshJwt(userLogin, userRoles)
+        val accessJwt = sessionEntity.toAccessJwt(externalUserId, userRoles)
+        val refreshJwt = sessionTokenEntity.toRefreshJwt(externalUserId, userRoles)
         sessionsSafeRepository.saveNewSession(sessionEntity, sessionTokenEntity)
         return JwtPair(accessJwt, refreshJwt)
     }
@@ -99,7 +99,7 @@ private class SessionProcessorImpl(
      */
     override suspend fun refreshSession(
         refreshId: String,
-        userLogin: String,
+        externalUserId: String,
         userRoles: List<UserRole>,
         currentUserInfo: JsonMap
     ): JwtPair {
@@ -111,7 +111,7 @@ private class SessionProcessorImpl(
                     expireVerificationValidator(it.expiresAt)
                 }
 
-        val newAccessJwt = sessionTokenWithSessionEntity.toSessionEntity().toAccessJwt(userLogin, userRoles)
+        val newAccessJwt = sessionTokenWithSessionEntity.toSessionEntity().toAccessJwt(externalUserId, userRoles)
         val newRefreshJwt = sessionTokenWithSessionEntity.toSessionTokenEntity()
             .run {
                 val now = getCurrentInstantUseCase()
@@ -126,7 +126,7 @@ private class SessionProcessorImpl(
                     expiresAt = now.plusSeconds(refreshTokenTimeLifeInSec),
                     userInfo = currentUserInfo
                 )
-            }.also { sessionsSafeRepository.saveSessionToken(it) }.toRefreshJwt(userLogin, userRoles)
+            }.also { sessionsSafeRepository.saveSessionToken(it) }.toRefreshJwt(externalUserId, userRoles)
         return JwtPair(newAccessJwt, newRefreshJwt)
     }
 
@@ -153,21 +153,21 @@ private class SessionProcessorImpl(
         )
     }
 
-    private fun SessionTokenEntity.toRefreshJwt(login: String, userRoles: List<UserRole>): JwtModel = JwtModel(
+    private fun SessionTokenEntity.toRefreshJwt(externalUserId: String, userRoles: List<UserRole>): JwtModel = JwtModel(
         jwtId = refreshId,
         type = GlobalConstants.REFRESH_TOKEN_TYPE,
         expiresAt = expiresAt,
-        subject = login,
+        externalUserId = externalUserId,
         roles = userRoles
     )
 
-    private fun SessionEntity.toAccessJwt(login: String, userRoles: List<UserRole>): JwtModel {
+    private fun SessionEntity.toAccessJwt(externalUserId: String, userRoles: List<UserRole>): JwtModel {
         val now = getCurrentInstantUseCase()
         return JwtModel(
             jwtId = id,
             type = GlobalConstants.ACCESS_TOKEN_TYPE,
             expiresAt = now.plusSeconds(accessTokenTimeLifeInSec),
-            subject = login,
+            externalUserId = externalUserId,
             roles = userRoles
         )
     }

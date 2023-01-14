@@ -46,7 +46,7 @@ internal class DecodeJwtTokenUseCase(
     private fun DecodedJWT.toJwtModel() = JwtModel(
         jwtId = requireNotNull(id),
         expiresAt = expiresAtAsInstant,
-        subject = subject,
+        externalUserId = subject,
         type = requireNotNull(getClaim(CLAIM_TOKEN_TYPE).asString()),
         roles = getClaim(CLAIM_ROLES).asList(String::class.java).map { UserRole.valueOf(it) }
     )

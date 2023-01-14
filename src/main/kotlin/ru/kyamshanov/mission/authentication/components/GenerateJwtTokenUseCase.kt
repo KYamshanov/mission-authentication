@@ -24,7 +24,7 @@ internal class GenerateJwtTokenUseCase(
     operator fun invoke(jwtModel: JwtModel): String =
         JWT.create()
             .withJWTId(jwtModel.jwtId)
-            .withSubject(jwtModel.subject)
+            .withSubject(jwtModel.externalUserId)
             .withExpiresAt(jwtModel.expiresAt)
             .withClaim(CLAIM_TOKEN_TYPE, jwtModel.type)
             .withClaim(CLAIM_ROLES, jwtModel.roles.map { it.name })
