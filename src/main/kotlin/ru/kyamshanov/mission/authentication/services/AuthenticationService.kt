@@ -72,7 +72,7 @@ private class AuthenticationServiceImpl @Autowired constructor(
         val user = userProcessor.verify(userSketch)
         return sessionProcessor.createSession(
             userId = requireNotNull(user.id),
-            userLogin = user.login,
+            externalUserId = requireNotNull(user.externalId),
             userInfo = userInfo,
             userRoles = roleService.getUserRoles(user)
         )
@@ -83,7 +83,7 @@ private class AuthenticationServiceImpl @Autowired constructor(
         val jwtModel = decodeJwtTokenUseCase.verify(refreshToken, REFRESH_TOKEN_TYPE)
         return sessionProcessor.refreshSession(
             refreshId = jwtModel.jwtId,
-            userLogin = jwtModel.subject.orEmpty(),
+            externalUserId = jwtModel.externalUserId,
             userRoles = jwtModel.roles,
             currentUserInfo = userInfo
         )

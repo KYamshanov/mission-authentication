@@ -7,13 +7,13 @@ import java.time.Instant
  * @property jwtId Идентификатор токена
  * @property type Тип токена
  * @property expiresAt Дата прекращения действия токена
- * @property subject Субъект токена
+ * @property externalUserId Внешний ID пользовател
  * @property roles Роли пользователя
  */
 internal data class JwtModel(
     val jwtId: String,
     val type: String,
-    val expiresAt: Instant?,
-    val subject: String?,
+    val expiresAt: Instant,
+    val externalUserId: String,
     val roles: List<UserRole>
 )
