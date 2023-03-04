@@ -22,16 +22,16 @@ internal class UserRolesNativeQueryRepository @Autowired constructor(
 
     /**
      * Получить роли пользоваетля
-     * @param externalUserId Внешний ИД юзера
+     * @param userId ИД юзера
      * @return [Flow]<[RoleEntity]>
      */
-    fun getUserRoles(externalUserId: String): Flow<RoleEntity> =
+    fun getUserRoles(userId: String): Flow<RoleEntity> =
         r2dbcEntityTemplate.databaseClient.sql(
             "  SELECT roles.*\n" +
                     "FROM auth_users users\n" +
                     "         RIGHT JOIN user_role ON users.id = user_role.user_id\n" +
                     "         RIGHT JOIN roles ON user_role.role_id = roles.id\n" +
-                    "WHERE users.external_id = '$externalUserId'"
+                    "WHERE users.id = '$userId'"
         )
             .map { t, u -> converter.read(RoleEntity::class.java, t, u) }
             .all().asFlow()

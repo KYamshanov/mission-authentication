@@ -26,13 +26,12 @@ internal interface SessionProcessor {
     /**
      * Создать сессию
      * @param userId Идентификатор пользователя
-     * @param externalUserId Внешний ID пользователя
      * @param userRoles Роли пользоваетля
      * @param userInfo Информация о пользователе
      *
      * @return [JwtPair] Пара Jwt токенов access/refresh
      */
-    suspend fun createSession(userId: String, externalUserId: String, userRoles: List<UserRole>, userInfo: JsonMap): JwtPair
+    suspend fun createSession(userId: String, userRoles: List<UserRole>, userInfo: JsonMap): JwtPair
 
     /**
      * Обновить сессию
@@ -82,14 +81,13 @@ private class SessionProcessorImpl(
      */
     override suspend fun createSession(
         userId: String,
-        externalUserId: String,
         userRoles: List<UserRole>,
         userInfo: JsonMap
     ): JwtPair {
         val sessionEntity = createSessionEntity(userId)
         val sessionTokenEntity = sessionEntity.toTokenEntity(userInfo)
-        val accessJwt = sessionEntity.toAccessJwt(externalUserId, userRoles)
-        val refreshJwt = sessionTokenEntity.toRefreshJwt(externalUserId, userRoles)
+        val accessJwt = sessionEntity.toAccessJwt(userId, userRoles)
+        val refreshJwt = sessionTokenEntity.toRefreshJwt(userId, userRoles)
         sessionsSafeRepository.saveNewSession(sessionEntity, sessionTokenEntity)
         return JwtPair(accessJwt, refreshJwt)
     }

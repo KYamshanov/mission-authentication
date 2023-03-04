@@ -35,8 +35,8 @@ private class RoleServiceImpl @Autowired constructor(
 ) : RoleService {
 
     override suspend fun getUserRoles(user: User): List<UserRole> {
-        requireNotNull(user.externalId) { "External userId required for passed user" }
-        return rolesRepository.getUserRoles(user.externalId).toList().map { UserRole.valueOf(it.roleName) }
+        requireNotNull(user.id) { "External userId required for passed user" }
+        return rolesRepository.getUserRoles(user.id).toList().map { UserRole.valueOf(it.roleName) }
     }
 
     override suspend fun setUserRoles(user: User, roles: List<UserRole>): User {

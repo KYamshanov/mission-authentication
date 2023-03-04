@@ -100,9 +100,10 @@ POST http://localhost:8081/roles/set_role
 Content-Type: application/json
 
 {
-  "externalUserId": "*",
+  "externalUserId": "d0f4b45d-6ba3-40ae-b989-c5c583dc5ae5",
   "roles": [
     "ADMIN",
     "MANAGER"
-  ]
+  ]1223654789965420
+  0+
 }

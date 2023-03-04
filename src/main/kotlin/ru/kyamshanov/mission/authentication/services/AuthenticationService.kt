@@ -72,7 +72,6 @@ private class AuthenticationServiceImpl @Autowired constructor(
         val user = userProcessor.verify(userSketch)
         return sessionProcessor.createSession(
             userId = requireNotNull(user.id),
-            externalUserId = requireNotNull(user.externalId),
             userInfo = userInfo,
             userRoles = roleService.getUserRoles(user)
         )

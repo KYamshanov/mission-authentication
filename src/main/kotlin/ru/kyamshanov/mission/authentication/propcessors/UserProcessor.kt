@@ -36,11 +36,11 @@ internal interface UserProcessor {
     suspend fun verify(user: User): User
 
     /**
-     * Получить пользователя из externalId
-     * @param externalId Внешний идентификатор пользователя
+     * Получить пользователя из Id
+     * @param userId Идентификатор пользователя
      * @return [User]
      */
-    suspend fun getUserById(externalId: String): User
+    suspend fun getUserById(userId: String): User
 }
 
 /**
@@ -58,11 +58,9 @@ private class UserProcessorImpl(
      * @see [UserProcessor.saveUser]
      */
     override suspend fun saveUser(user: User): User {
-        if (userEntityCrudRepository.existsByLogin(user.login)) throw UserAlreadySavedException("User ${user.login} already saved")
         val entity = UserEntity(
             login = user.login,
             password = passwordEncoder.encode(user.password),
-            externalId = requireNotNull(user.externalId)
         )
         return userEntityCrudRepository.save(entity).toModel()
     }
@@ -72,13 +70,13 @@ private class UserProcessorImpl(
      */
     override suspend fun verify(user: User): User {
         val foundUser = userEntityCrudRepository.findByLogin(user.login)
-            ?: throw UserNotFoundException("User with login ${user.login} was not found in auth-users database")
+            ?: throw UserNotFoundException("User with login ${user.login} has not found in auth-users database")
         if (!passwordEncoder.matches(user.password, foundUser.password.toString()))
             throw NoMatchPasswordException()
         return foundUser.toModel()
     }
 
-    override suspend fun getUserById(externalId: String): User =
-        userEntityCrudRepository.findByExternalId(externalId)?.toModel()
-            ?: throw UserNotFoundException("User with externalId $externalId not found in auth-users database")
+    override suspend fun getUserById(userId: String): User =
+        userEntityCrudRepository.findById(userId)?.toModel()
+            ?: throw UserNotFoundException("User with Id $userId has not found in auth-users database")
 }
