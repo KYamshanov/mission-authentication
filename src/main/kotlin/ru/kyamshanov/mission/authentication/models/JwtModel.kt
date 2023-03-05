@@ -7,7 +7,7 @@ import java.time.Instant
  * @property jwtId Идентификатор токена
  * @property type Тип токена
  * @property expiresAt Дата прекращения действия токена
- * @property externalUserId Внешний ID пользовател
+ * @property externalUserId Идентификатор пользвателя за пределами МС (login/USER_ID/..)
  * @property roles Роли пользователя
  */
 internal data class JwtModel(

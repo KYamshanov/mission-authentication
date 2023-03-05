@@ -1,7 +1,3 @@
-/**
-  Скрипт для создания/пересоздания новых таблиц
- */
-
 DROP TABLE IF EXISTS auth_session_tokens;
 DROP TABLE IF EXISTS auth_share;
 DROP TABLE IF EXISTS auth_sessions;
@@ -18,8 +14,7 @@ CREATE TABLE auth_users
 (
     id          VARCHAR(50) PRIMARY KEY,
     login       VARCHAR(50) UNIQUE NOT NULL,
-    password    VARCHAR(255)       NOT NULL,
-    external_id VARCHAR(50) UNIQUE NOT NULL
+    password    VARCHAR(255)       NOT NULL
 );
 
 CREATE TABLE auth_sessions

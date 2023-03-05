@@ -10,28 +10,28 @@ services:
       POSTGRES_DB: mission
       PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
-        - ./assets/init_db:/docker-entrypoint-initdb.d
-        - ./assets/db_data/postgres:/var/lib/postgresql/data
+      - ./assets/init_db:/docker-entrypoint-initdb.d
+      - ./assets/db_data/postgres:/var/lib/postgresql/data
     networks:
-      - back
+      - auth_back
   redis:
     image: redis:7
     container_name: 'mission-redis'
     volumes:
       - ./assets/db_data/redis:/data
     networks:
-      - back
+      - auth_back
   auth:
     build: ./
     container_name: 'mission-auth'
     networks:
+      - auth_back
       - mission-gateway_mission
-      - back
     ports:
       - 8081:8081
 networks:
-  back:
+  auth_back:
     driver: bridge
-    name: back_network
+    name: auth_back
   mission-gateway_mission:
     external: true

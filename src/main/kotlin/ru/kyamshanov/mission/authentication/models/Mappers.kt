@@ -10,7 +10,6 @@ internal fun UserEntity.toModel(): User = User(
     login = login,
     password = MASKED_PASSWORD,
     id = id,
-    externalId = externalId
 )
 
 private const val MASKED_PASSWORD = "MaSkEd"

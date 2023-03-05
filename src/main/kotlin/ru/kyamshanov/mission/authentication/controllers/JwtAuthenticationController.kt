@@ -220,25 +220,6 @@ internal class JwtAuthenticationController @Autowired constructor(
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
 
-    /**
-     * End-point (POST) : /refresh
-     * Обновить токены с проверкой актуальности рефреш токена
-     * @param body Тело запроса
-     * @return [ResponseEntity] С парой новых токенов
-     */
-    @PostMapping("get_id")
-    suspend fun getId(
-        @RequestBody(required = true) body: GetUserIdRqDto
-    ): ResponseEntity<GetUserIdRsDto> =
-        try {
-            val response =
-                GetUserIdRsDto(requireNotNull(identifyService.getUserByRefreshToken(body.refreshToken).externalId))
-            ResponseEntity(response, HttpStatus.OK)
-        } catch (e: Throwable) {
-            e.printStackTrace()
-            ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
-        }
-
     private fun JwtPair.toTokenRs(): TokensRsDto {
         val accessToken = generateJwtTokenUseCase(accessJwt)
         val refreshJwt = generateJwtTokenUseCase(refreshJwt)

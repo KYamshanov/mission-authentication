@@ -103,7 +103,6 @@ private class ShareAuthenticationServiceImpl @Autowired constructor(
 
         return sessionProcessor.createSession(
             userId = userEntity.id,
-            externalUserId = userEntity.externalId,
             userInfo = shareAuthUserInfo,
             userRoles = roles
         )

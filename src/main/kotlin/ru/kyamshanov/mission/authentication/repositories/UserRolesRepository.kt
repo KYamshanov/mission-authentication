@@ -17,10 +17,10 @@ internal interface UserRolesRepository {
 
     /**
      * Получить роли пользователя
-     * @param externalUserId Внешний Id пользователя
+     * @param userId Id пользователя
      * @return [Flow]<[RoleEntity]>
      */
-    fun getUserRoles(externalUserId: String): Flow<RoleEntity>
+    fun getUserRoles(userId: String): Flow<RoleEntity>
 
     /**
      * Изменить роли пользователя
@@ -41,8 +41,8 @@ internal class UserRolesRepositoryImpl @Autowired constructor(
     private val native: UserRolesNativeQueryRepository,
     private val userRoleCrudRepository: UserRoleCrudRepository
 ) : UserRolesRepository {
-    override fun getUserRoles(externalUserId: String): Flow<RoleEntity> =
-        native.getUserRoles(externalUserId)
+    override fun getUserRoles(userId: String): Flow<RoleEntity> =
+        native.getUserRoles(userId)
 
     @Transactional
     override suspend fun setUserRoles(userId: String, roles: List<UserRole>) {

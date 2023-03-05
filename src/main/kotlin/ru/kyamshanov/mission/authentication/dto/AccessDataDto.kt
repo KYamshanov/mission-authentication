@@ -4,10 +4,10 @@ import ru.kyamshanov.mission.authentication.models.UserRole
 
 /**
  * Dto-model Access данных
- * @property userId Внешний ID пользователя
+ * @property externalId ID пользователя для внешнего пространства
  * @property roles Роли пользователя
  */
 data class AccessDataDto(
     val roles: List<UserRole>,
-    val userId: String
+    val externalId: String
 )
