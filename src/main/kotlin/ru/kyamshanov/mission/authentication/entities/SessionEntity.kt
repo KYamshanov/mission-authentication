@@ -3,6 +3,7 @@ package ru.kyamshanov.mission.authentication.entities
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import ru.kyamshanov.mission.authentication.models.SessionInfo
 import java.time.Instant
 
 /**
@@ -27,3 +28,15 @@ internal data class SessionEntity(
     @Column("id")
     private val givenId: String? = null
 ) : AbstractEntity(givenId)
+
+internal fun SessionEntity.toSessionInfo() = SessionInfo(
+    id = id,
+    status = status.toSessionInfoStatus()
+)
+
+private fun EntityStatus.toSessionInfoStatus(): SessionInfo.Status = when (this) {
+    EntityStatus.ACTIVE -> SessionInfo.Status.ACTIVE
+    EntityStatus.PAUSED -> SessionInfo.Status.PAUSED
+    EntityStatus.BLOCKED -> SessionInfo.Status.BLOCKED
+    EntityStatus.INVALID -> SessionInfo.Status.INVALID
+}

@@ -2,7 +2,9 @@ package ru.kyamshanov.mission.authentication.services
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import ru.kyamshanov.mission.authentication.entities.toSessionInfo
 import ru.kyamshanov.mission.authentication.errors.SessionNotFoundException
+import ru.kyamshanov.mission.authentication.models.SessionInfo
 import ru.kyamshanov.mission.authentication.repositories.SessionsSafeRepository
 
 /**
@@ -15,7 +17,7 @@ internal interface SessionService {
      * @param accessToken Access токен
      * @return Список сессий пользователя
      */
-    suspend fun getAllSessionsByAccessToken(accessToken: String): List<String>
+    suspend fun getAllSessionsByAccessToken(accessToken: String): List<SessionInfo>
 }
 
 /**
@@ -32,10 +34,10 @@ private class SessionServiceImpl @Autowired constructor(
     /**
      * @see [SessionService.getAllSessionsByAccessToken]
      */
-    override suspend fun getAllSessionsByAccessToken(accessToken: String): List<String> {
+    override suspend fun getAllSessionsByAccessToken(accessToken: String): List<SessionInfo> {
         val sessionId = verifyService.verifyAccessToken(accessToken, true).jwtId
         val userId = (sessionsSafeRepository.findSessionById(sessionId)
             ?: throw SessionNotFoundException("Session with id $sessionId not found")).userId
-        return sessionsSafeRepository.findAllUserSessions(userId).map { it.id }
+        return sessionsSafeRepository.findAllUserSessions(userId).map { it.toSessionInfo() }
     }
 }

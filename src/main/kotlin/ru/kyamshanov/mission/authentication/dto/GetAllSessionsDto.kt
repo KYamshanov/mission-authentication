@@ -13,5 +13,35 @@ data class GetAllSessionsRqDto(
  * @property sessions Список сессий пользователя
  */
 data class GetAllSessionsRsDto(
-    val sessions: List<String>
-)
+    val sessions: List<Session>
+) {
+
+    data class Session(
+        val id: String,
+        val status: Status
+    ) {
+
+        enum class Status {
+
+            /**
+             * Активный
+             */
+            ACTIVE,
+
+            /**
+             * Остановленный
+             */
+            PAUSED,
+
+            /**
+             *
+             */
+            BLOCKED,
+
+            /**
+             * Недействительный
+             */
+            INVALID;
+        }
+    }
+}

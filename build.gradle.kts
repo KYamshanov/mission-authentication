@@ -40,7 +40,7 @@ dependencies {
     implementation("com.auth0:java-jwt:4.0.0")
 
     //Redis
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
     //for test
     testImplementation("org.springframework.boot:spring-boot-starter-test")

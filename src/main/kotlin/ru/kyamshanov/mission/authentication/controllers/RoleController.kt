@@ -29,7 +29,7 @@ internal class RoleController @Autowired constructor(
      * @param body [SetUserRolesRqDto] Тело запроса
      * @return Рузльтат регистрации в виде [ResponseEntity] без тела
      */
-    @PostMapping("set_role")
+    @PostMapping("/set_role")
     suspend fun setRoles(
         @RequestBody(required = false) body: SetUserRolesRqDto
     ): ResponseEntity<Unit> =

@@ -15,5 +15,5 @@ internal data class JwtModel(
     val type: String,
     val expiresAt: Instant,
     val externalUserId: String,
-    val roles: List<UserRole>
+    val roles: List<UserRole>,
 )

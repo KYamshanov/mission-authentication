@@ -214,7 +214,7 @@ internal class JwtAuthenticationController @Autowired constructor(
     ): ResponseEntity<GetAllSessionsRsDto> =
         try {
             val sessions = sessionService.getAllSessionsByAccessToken(body.accessToken)
-            ResponseEntity(GetAllSessionsRsDto(sessions), HttpStatus.OK)
+            ResponseEntity(GetAllSessionsRsDto(sessions.map { it.toSessionDto() }), HttpStatus.OK)
         } catch (e: Throwable) {
             e.printStackTrace()
             ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)

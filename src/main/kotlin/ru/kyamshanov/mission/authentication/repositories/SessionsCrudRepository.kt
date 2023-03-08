@@ -3,6 +3,7 @@ package ru.kyamshanov.mission.authentication.repositories
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
+import org.springframework.stereotype.Repository
 import ru.kyamshanov.mission.authentication.entities.EntityStatus
 import ru.kyamshanov.mission.authentication.entities.SessionEntity
 import java.time.Instant
@@ -10,6 +11,7 @@ import java.time.Instant
 /**
  * CRUD репозиторий для сущнстей сессий
  */
+@Repository
 internal interface SessionsCrudRepository : CoroutineCrudRepository<SessionEntity, String> {
 
     /**
