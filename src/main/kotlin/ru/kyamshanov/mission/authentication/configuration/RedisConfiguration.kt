@@ -36,10 +36,10 @@ internal class RedisConfiguration(
 
     @Bean
     fun <F, S> reactiveRedisTemplate(
-        redisConnectionFactory: ReactiveRedisConnectionFactory,
+        reactiveRedisConnectionFactory: ReactiveRedisConnectionFactory,
         objectMapper: ObjectMapper
     ): ReactiveRedisTemplate<F, S> =
         RedisSerializationContext.newSerializationContext<F, S>(GenericJackson2JsonRedisSerializer(objectMapper))
             .build()
-            .let { ReactiveRedisTemplate(redisConnectionFactory, it) }
+            .let { ReactiveRedisTemplate(reactiveRedisConnectionFactory, it) }
 }

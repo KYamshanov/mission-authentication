@@ -48,6 +48,6 @@ internal class DecodeJwtTokenUseCase(
         expiresAt = expiresAtAsInstant,
         externalUserId = subject,
         type = requireNotNull(getClaim(CLAIM_TOKEN_TYPE).asString()),
-        roles = getClaim(CLAIM_ROLES).asList(String::class.java).map { UserRole.valueOf(it) }
+        roles = getClaim(CLAIM_ROLES).asList(String::class.java).map { UserRole.valueOf(it) },
     )
 }

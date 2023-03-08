@@ -26,6 +26,11 @@ object GlobalConstants {
     const val CLAIM_ROLES = "roles"
 
     /**
+     * Claim для хранения ролей
+     */
+    const val CLAIM_LOGIN = "login"
+
+    /**
      * Источник сертификатов приложения
      */
     const val CERTIFICATES_PROPERTY_SOURCE = "classpath:certificates.properties"

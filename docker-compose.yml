@@ -27,6 +27,8 @@ services:
     networks:
       - auth_back
       - mission-gateway_mission
+    environment:
+      REDIS_HOST: mission-redis
     ports:
       - 8081:8081
 networks:
