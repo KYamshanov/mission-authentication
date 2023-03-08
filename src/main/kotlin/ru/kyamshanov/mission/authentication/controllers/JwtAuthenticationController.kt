@@ -97,7 +97,7 @@ internal class JwtAuthenticationController @Autowired constructor(
             ResponseEntity(
                 CheckAccessRsDto(
                     CheckAccessRsDto.AccessStatus.ACTIVE,
-                    AccessDataDto(jwtModel.roles, jwtModel.externalUserId)
+                    AccessDataDto(jwtModel.roles, jwtModel.externalUserId, accessId = jwtModel.jwtId)
                 ), HttpStatus.OK
             )
         } catch (e: TokenExpiredException) {
@@ -225,6 +225,9 @@ internal class JwtAuthenticationController @Autowired constructor(
         val refreshJwt = generateJwtTokenUseCase(refreshJwt)
         val roles = requireNotNull(accessJwt.roles) { "User roles needed for access token" }
 
-        return TokensRsDto(AccessTokenDto(accessToken, AccessDataDto(roles, accessJwt.externalUserId)), refreshJwt)
+        return TokensRsDto(
+            AccessTokenDto(accessToken, AccessDataDto(roles, accessJwt.externalUserId, accessJwt.jwtId)),
+            refreshJwt
+        )
     }
 }
