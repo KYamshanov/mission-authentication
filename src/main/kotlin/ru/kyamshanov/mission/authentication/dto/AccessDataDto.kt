@@ -9,5 +9,6 @@ import ru.kyamshanov.mission.authentication.models.UserRole
  */
 data class AccessDataDto(
     val roles: List<UserRole>,
-    val externalId: String
+    val externalId: String,
+    val accessId: String
 )
