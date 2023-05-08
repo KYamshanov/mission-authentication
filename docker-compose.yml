@@ -29,8 +29,12 @@ services:
       - mission-gateway_mission
     environment:
       REDIS_HOST: mission-redis
-    ports:
-      - 8081:8081
+      POSTGRES_HOST: auth-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: mission
+      POSTGRES_SCHEMA: public
+      POSTGRES_PASSWORD: private_password
+      POSTGRES_USERNAME: postgres
 networks:
   auth_back:
     driver: bridge

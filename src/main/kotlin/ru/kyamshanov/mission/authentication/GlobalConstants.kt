@@ -53,32 +53,32 @@ object GlobalConstants {
     /**
      * Ключ для параметра - время жизни токена доступности
      */
-    const val KEY_HOST = "postgres.host"
+    const val KEY_HOST = "POSTGRES_HOST"
 
     /**
      * Ключ для параметра - время жизни токена доступности
      */
-    const val KEY_PORT = "postgres.port"
+    const val KEY_PORT = "POSTGRES_PORT"
 
     /**
      * Ключ для параметра - время жизни токена доступности
      */
-    const val KEY_DATABASE = "postgres.database"
+    const val KEY_DATABASE = "POSTGRES_DATABASE"
 
     /**
      * Ключ для параметра - время жизни токена доступности
      */
-    const val KEY_SCHEMA = "postgres.schema"
+    const val KEY_SCHEMA = "POSTGRES_SCHEMA"
 
     /**
      * Ключ для параметра - время жизни токена доступности
      */
-    const val KEY_USERNAME = "certificate.database.username"
+    const val KEY_USERNAME = "POSTGRES_USERNAME"
 
     /**
      * Ключ для параметра - время жизни токена доступности
      */
-    const val KEY_PASSWORD = "certificate.database.password"
+    const val KEY_PASSWORD = "POSTGRES_PASSWORD"
 
     /**
      * Ключ для параметра - приватный ключ для алгоритма HMAC256

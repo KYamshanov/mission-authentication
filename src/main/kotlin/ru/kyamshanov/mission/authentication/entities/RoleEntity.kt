@@ -14,6 +14,6 @@ internal data class RoleEntity(
     @Id
     @Column("id")
     val id: Int? = null,
-    @Column("role_name")
+        @Column("role_name")
     val roleName: String
 )
